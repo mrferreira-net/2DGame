@@ -35,7 +35,8 @@
 
         <div id="container">
             <canvas id="display"></canvas>
-            <menu id="controls">
+
+            <menu id="menuControls">
                 <div>
                     <button id="playButton" style="bottom: 185px;" onclick="play()">Play!</button>
                 </div>
@@ -46,11 +47,32 @@
                     <button id="settingsButton" style="bottom: 175px;" onclick="settings()">Settings</button>
                 </div>
                 <div class="card" style="width: 200px;" id="mapPreview">
-                    <img src="" class="card-img-top" alt="mapPreview" id="mapPreviewImage">
+                    <h5>Current Map</h5>
+                    <img src="Assets/Backgrounds/AsteroidDefense.png" class="card-img-top" alt="mapPreview" id="mapPreviewImage">
                     <div class="card-body">
-                      <p class="card-text" id="mapPreviewText"></p>
+                      <p class="card-text" id="mapPreviewText">Asteroid Defense</p>
                     </div>
                 </div>
+            </menu>
+
+            <menu id="gameControls">
+                <button id="backToMenu" onclick="menu()"><- Back</button>
+            </menu>
+
+            <menu id="mapsControls">
+                <button id="backToMenu" onclick="menu()"><- Back</button>
+                <div class="card" style="width: 18rem;" id="asteroid">
+                    <img src="" class="card-img-top" alt="...">
+                    <div class="card-body">
+                      <h5 class="card-title">Card title</h5>
+                      <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                      <a href="#" class="btn btn-primary">Go somewhere</a>
+                    </div>
+                  </div>
+            </menu>
+
+            <menu id="settingsControls">
+                <button id="backToMenu" onclick="menu()"><- Back</button>
             </menu>
         </div>
     </body>
