@@ -61,3 +61,14 @@ button {
     width: 100%;
     text-align: center;
 }
+#footnote {
+    position: relative;
+    color: rgb(175, 175, 175);
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    font-size: larger;
+}
+a {
+    color: rgb(49, 194, 204);
+}
