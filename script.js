@@ -18,11 +18,31 @@ $(document).ready(function () {
 
 function play() {
     let map = $('#mapPreviewText').html()
-    if (map == "Asteroid Defense") 
-        runAsteroid()
+    if (map == "Asteroid Defense") {
+        screenTransition("AsteroidDefense")
+        let wait = setInterval(function () {
+            if (transitionEnd) {
+                runAsteroid()
+                clearInterval(wait)
+            }
+        }, 10)
+    }
+        
 }
 
+// test function
+function test() {
+    container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')" // temp
+    gameControls.style.display = "none"
+    mapsControls.style.display = "none"
+    settingsControls.style.display = "none"
+    menuControls.style.display = "none"
+    runAsteroid()
+}
+
+let transitionEnd = false
 function screenTransition(event) {
+    transitionEnd = false
     let string
     let interval = 0
     if (event.target == undefined) {
@@ -40,6 +60,7 @@ function screenTransition(event) {
     let animate = setInterval(function () {
         if (opacity < 0) {
             transitionScreen.style.zIndex = "-1"
+            transitionEnd = true
             clearInterval(animate)
         }  
         else if (madeOpaque) {
@@ -54,8 +75,10 @@ function screenTransition(event) {
             settingsControls.style.display = "none"
             menuControls.style.display = "none"
             container.style.backgroundImage = "url('Assets/Backgrounds/menu.png')"
-            if (string == "Main Menu")
+            if (string == "Main Menu") {
                 menuControls.style.display = "block"
+                context.clearRect(0, 0, display.width, display.height)
+            }
             else if (string == "Settings")
                 settingsControls.style.display = "block"
             else if (string == "Maps")
@@ -72,14 +95,28 @@ function screenTransition(event) {
     }, interval)
 }
 
-function runAsteroid() {
-    screenTransition("AsteroidDefense")
-    let x = 0,
-        y = 10,
-        sprite = new Image()
+function getRandomNum(min, max) {
+    return Math.random() * (max - min) + min;
+}
+function headsOrTails () {
+    return Math.random() < 0.5
+}
 
-    sprite.onload = animate
-    sprite.src = "Assets/Sprites/TestSprite.png"
+function runAsteroid() {
+    let x = -3,
+        y = getRandomNum (5,30),
+        t = 0,
+        dy = getRandomNum(0, 1),
+        sprite = new Image()
+        
+    let width
+    let height
+    sprite.onload = function () {
+        width = this.width
+        height = this.height
+        animate()
+    }
+    sprite.src = "Assets/Sprites/testsprite2.png"
 
     function animate() {
         // Clear display
@@ -87,9 +124,14 @@ function runAsteroid() {
         // Draw sprite at current position
         context.drawImage(sprite, x, y)
         // Change position
-        x++
+        t = t + 0.25
+        x = t
+        if (y < 5 || y > 30)
+            dy = -dy
+        y = y + dy
+
         // Loop
-        if (x < 250) 
+        if (y < 151) 
             requestAnimationFrame(animate)
     }
 }
