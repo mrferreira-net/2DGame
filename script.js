@@ -32,7 +32,7 @@ function play() {
 
 // test function
 function test() {
-    container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')" // temp
+    container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefensep.png')"
     gameControls.style.display = "none"
     mapsControls.style.display = "none"
     settingsControls.style.display = "none"
@@ -103,10 +103,8 @@ function headsOrTails () {
 }
 
 function runAsteroid() {
-    let x = -3,
-        y = getRandomNum (5,30),
-        t = 0,
-        dy = getRandomNum(0, 1),
+    let x = 0,
+        y = 16,
         sprite = new Image()
         
     let width
@@ -118,18 +116,37 @@ function runAsteroid() {
     }
     sprite.src = "Assets/Sprites/testsprite2.png"
 
+    let path1 = false
+    let path2 = false
     function animate() {
         // Clear display
         context.clearRect(0, 0, display.width, display.height)
         // Draw sprite at current position
         context.drawImage(sprite, x, y)
         // Change position
-        t = t + 0.25
-        x = t
-        if (y < 5 || y > 30)
-            dy = -dy
-        y = y + dy
+        if (x == 0 && y < 17) 
+            path1 = true
+        else if (x == 0 && y >= 17) 
+            path2 = true
+        
 
+
+        if (path1) {
+            if (x > -1 && x < 54 && y < 17 && y > 5) {
+                x = x + 0.25
+                y = -(0.22 * x) + 17
+            }
+            else if (x >= 54 && x < 80 && y >= 5 && y < 5.5) {
+                x = x + 0.25
+                y = (0.04 * x) + 5
+            }
+            else {
+                let i = 0
+            }
+        }
+        else if (path2) {
+
+        }
         // Loop
         if (y < 151) 
             requestAnimationFrame(animate)
