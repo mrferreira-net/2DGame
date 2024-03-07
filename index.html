@@ -56,7 +56,12 @@
             </menu>
 
             <menu id="gameControls">
+                <div style="width: 190px; height: 460px; bottom: 2px; right: 2px; background-color: rgba(0, 0, 0, 0.637);
+                z-index: 0; position: absolute; border-radius: 10%; border-bottom-left-radius: 0%;"></div>
+                <div style="width: 330px; height: 100px; bottom: 2px; right: 192px; background-color: rgba(0, 0, 0, 0.637);
+                z-index: 0; position: absolute; border-radius: 10%; border-bottom-right-radius: 0%; border-top-right-radius: 0%;"></div>
                 <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
+                <button id="placeTower">Place Tower</button>
             </menu>
 
             <menu id="mapsControls">
@@ -78,7 +83,7 @@
 
         <div>
             <button style="bottom: 185px;" onclick="test()">test</button>
-            <button style="bottom: 185px;" onclick="createPath()">create</button>
+            <button style="bottom: 185px;" onclick="createPath()">create path</button>
         </div>
 
         <div id="position"></div>

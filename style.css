@@ -11,7 +11,6 @@ a:focus,a:visited,a:active{
 * {
     -webkit-tap-highlight-color: transparent;
 }
-
 body {
     background-color: rgb(36, 36, 36);
     caret-color: transparent;
@@ -78,6 +77,12 @@ button {
     position: absolute;
     top: 5px;
     left: 5px;
+}
+#placeTower {
+    position: absolute;
+    bottom: 400px;
+    right: 80px;
+    z-index: 0;
 }
 #asteroid {
     bottom: 10px;
