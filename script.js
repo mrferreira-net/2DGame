@@ -14,6 +14,7 @@ $(document).ready(function () {
     mapsControls = $('#mapsControls')[0]
     settingsControls = $('#settingsControls')[0]
     menuControls = $('#menuControls')[0]
+    context.imageSmoothingEnabled = false
     context.lineWidth = 0.1
     context.strokeStyle = "white"
 })
@@ -156,7 +157,7 @@ function headsOrTails () {
 }
 
 // function that defines a sprite type in a wave.
-function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, spriteWidth, spriteHeight) {
+function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, sizeMod) {
     let sprites = []
     for (let i = 0; i < numOfSprites; i++) {
         sprites.push({
@@ -165,15 +166,19 @@ function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, sp
             y: 0,
             speed: spriteSpeed,
             image: new Image(),
-            width: spriteWidth,
-            height: spriteHeight,
-            path: headsOrTails(),
+            width: 0,
+            height: 0,
+            path: true,//headsOrTails(),
             index: 0,
         })
         sprites[i].image.src = imageSrc
     }
     
     sprites[numOfSprites - 1].image.onload = function () {
+        for (let i = 0; i < numOfSprites; i++) {
+            sprites[i].width = sprites[i].image.width * sizeMod
+            sprites[i].height = sprites[i].image.height * sizeMod
+        }
         let spawned = 0,
             spawning = setInterval(function () {
                 if (spawned == 0)
@@ -186,31 +191,49 @@ function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, sp
         function animate() {
             // Clear display
             context.clearRect(0, 0, display.width, display.height)
-            // Draw sprite at current position
-            if (spawned == 2) {
-                let i = 0
-            }
             for (let i = 0; i < spawned; i++) {
                 let roundedIndex = Math.round(sprites[i].index)
-                // Change position
+
+                let xf,
+                    yf,
+                    xi = sprites[i].x,
+                    yi = sprites[i].y
                 if (sprites[i].path) {
                     if (roundedIndex >= path1Len - 1) 
                         continue
-                    sprites[i].x = path1[roundedIndex].x
-                    sprites[i].y = path1[roundedIndex].y
-                    
+                    xf = path1[roundedIndex].x,
+                    yf = path1[roundedIndex].y
                     if (sprites[i].index < path1Len - 1) 
                         sprites[i].index = sprites[i].index + sprites[i].speed
                 }
                 else {
                     if (roundedIndex >= path2Len - 1) 
                         continue
-                    sprites[i].x = path2[roundedIndex].x
-                    sprites[i].y = path2[roundedIndex].y
+                    xf = path2[roundedIndex].x,
+                    yf = path2[roundedIndex].y
                     if (sprites[i].index < path2Len - 1) 
                         sprites[i].index = sprites[i].index + sprites[i].speed
                 }
-                context.drawImage(sprites[i].image, sprites[i].x, sprites[i].y, sprites[i].width, sprites[i].height)
+                
+                let dx = (xf - xi),
+                    dy = (yf - yi),
+                    slope = dy / dx,
+                    radians = Math.atan(slope),
+                    hypotenuse = Math.sqrt(((yf - yi) ** 2) + ((xf - xi) ** 2))
+
+                if (dy == 0 && Math.sign(dx) == -1)
+                    radians = Math.PI
+                if (dx == 0 && Math.sign(dy) == 1)
+                    radians = Math.PI * (3 / 2)
+                
+                context.save()
+                context.translate(xi, yi)
+                context.rotate(-radians)
+                context.drawImage(sprites[i].image, ((-sprites[i].width / 2) + hypotenuse), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
+                context.restore()
+
+                sprites[i].x = path1[roundedIndex].x
+                sprites[i].y = path1[roundedIndex].y
             }
 
             let spriteOnScreen = false
@@ -309,7 +332,7 @@ function runAsteroid() {
             path1Len = path1.length,
             path2Len = path2.length
             
-            let spawn1 = spawnSprites (20, 1000, 0.5, "Assets/Sprites/testsprite2.png", 100, 3, 3)
+            let spawn1 = spawnSprites (50, 1000, 1, "Assets/Sprites/drone.png", 100, 1)
             let spawn1Interval = setInterval(function() {
                 if (spawn1 == 0) {
                     clearInterval(spawn1Interval)
