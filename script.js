@@ -1,3 +1,5 @@
+let pathSmoothingIndex = 12
+
 // Waits for document to be ready before running JS code
 let display,
     container,
@@ -173,7 +175,7 @@ function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, si
             width: 0,
             height: 0,
             path: getRandomInt(paths.length),
-            index: 0,
+            index: 0
         })
         sprites[i].image.src = imageSrc
     }
@@ -198,37 +200,17 @@ function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, si
             for (let i = 0; i < spawned; i++) {
                 let roundedIndex = Math.round(sprites[i].index)
 
-                let xf,
-                    yf,
-                    xi = sprites[i].x,
-                    yi = sprites[i].y
-
                 if (roundedIndex >= paths[sprites[i].path].length - 1) 
                     continue
-                xf = paths[sprites[i].path][roundedIndex].x,
-                yf = paths[sprites[i].path][roundedIndex].y
+
                 if (sprites[i].index < paths[sprites[i].path].length - 1) 
                     sprites[i].index = sprites[i].index + sprites[i].speed
                 
-                let dx = (xf - xi),
-                    dy = (yf - yi),
-                    slope = dy / dx,
-                    radians = Math.atan(slope),
-                    hypotenuse = Math.sqrt(((yf - yi) ** 2) + ((xf - xi) ** 2))
-
-                if (dy == 0 && Math.sign(dx) == -1)
-                    radians = Math.PI
-                if (dx == 0 && Math.sign(dy) == 1)
-                    radians = Math.PI * (3 / 2)
-                
                 context.save()
-                context.translate(xi, yi)
-                context.rotate(-radians)
-                context.drawImage(sprites[i].image, ((-sprites[i].width / 2) + hypotenuse), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
+                context.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
+                context.rotate(paths[sprites[i].path][roundedIndex].r)
+                context.drawImage(sprites[i].image, ((-sprites[i].width / 2) + paths[sprites[i].path][roundedIndex].h), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
                 context.restore()
-
-                sprites[i].x = paths[sprites[i].path][roundedIndex].x
-                sprites[i].y = paths[sprites[i].path][roundedIndex].y
             }
 
             let spriteOnScreen = false
@@ -256,39 +238,66 @@ function runAsteroid() {
     let pathsLoaded = false
     $.get('Assets/GameData/AsteroidDefensePaths.txt', function(data) {
         let dataLen = data.length,
-            i = 0
+            i = 0,
+            coordinateCount = 0,
+            xData = "0",
+            yData = "0"
         while (i < dataLen) {
             if (data[i] == "[") {
                 paths.push([])
                 while (data[i] != "]" && i < dataLen) {
                     if (data[i] == "{") {
-                        let xData = "",
-                            yData = ""
-                        while (data[i] != "}" && i < dataLen) {
-                            if (data[i] == "x") {
-                                while (data[i] != ":" && i < dataLen)
-                                    i++
-                                i++
-                                while (data[i] != "," && i < dataLen) {
-                                    xData = xData + data[i]
-                                    i++
-                                }
-                                xData = Number(xData)
+                        if (coordinateCount == 0 || coordinateCount == pathSmoothingIndex) {
+                            coordinateCount = 0
+                            let lastCoordinate = {
+                                x: xData,
+                                y: yData
                             }
-                            else if (data[i] == "y") {
-                                while (data[i] != ":" && i < dataLen)
+                            xData = "0"
+                            yData = "0"
+                            while (data[i] != "}" && i < dataLen) {
+                                if (data[i] == "x") {
+                                    while (data[i] != ":" && i < dataLen)
+                                        i++
                                     i++
-                                i++
-                                while (data[i] != "}" && i < dataLen) {
-                                    yData = yData + data[i]
-                                    i++
+                                    while (data[i] != "," && i < dataLen) {
+                                        xData = xData + data[i]
+                                        i++
+                                    }
+                                    xData = Number(xData)
                                 }
-                                yData = Number(yData)
+                                else if (data[i] == "y") {
+                                    while (data[i] != ":" && i < dataLen)
+                                        i++
+                                    i++
+                                    while (data[i] != "}" && i < dataLen) {
+                                        yData = yData + data[i]
+                                        i++
+                                    }
+                                    yData = Number(yData)
+                                }
+                                else
+                                    i++
                             }
-                            else
-                                i++
+
+                            if (paths[paths.length - 1].length > 800) {
+                                let p = 0
+                            }
+                            let dy = yData - lastCoordinate.y,
+                                dx = xData - lastCoordinate.x
+                                radian = Math.atan(dy / dx),
+                                hypotenuse = Math.sqrt((dy ** 2) + (dx ** 2)) / pathSmoothingIndex
+
+                            if (Math.sign(dx) == -1)
+                                radian = radian + Math.PI
+                            
+                            for (let i = 1; i <= pathSmoothingIndex; i++) 
+                                paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), x: xData, y: yData})
+                            coordinateCount++
                         }
-                        paths[paths.length - 1].push({x: xData, y: yData})
+                        else
+                            coordinateCount++
+                        i++
                     }
                     else
                         i++
@@ -300,6 +309,8 @@ function runAsteroid() {
         pathsLoaded = true
     }, "text")
 
+    
+
     $("#placeTower").on("click", function () {
         let i = 0
     })
@@ -308,7 +319,7 @@ function runAsteroid() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
             
-            let spawn1 = spawnSprites (20, 1000, 1, "Assets/Sprites/drone.png", 100, 1)
+            let spawn1 = spawnSprites (50, 1000, 1, "Assets/Sprites/drone.png", 100, 1)
             let spawn1Interval = setInterval(function() {
                 if (spawn1 == 0) {
                     clearInterval(spawn1Interval)
