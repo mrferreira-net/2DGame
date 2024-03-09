@@ -236,98 +236,100 @@ let paths = []
 function runAsteroid() {
     // Load Paths
     let pathsLoaded = false
-    $.get('Assets/GameData/AsteroidDefensePaths.txt', function(data) {
-        let dataLen = data.length,
-            i = 0
-        while (i < dataLen) {
-            if (data[i] == "[") {
-                let coordinateCount = 0,
-                    xData = "0",
-                    yData = "0"
-                paths.push([])
-                while (data[i] != "]" && i < dataLen) {
-                    if (data[i] == "{") {
-                        if (coordinateCount == pathSmoothingIndex) {
-                            coordinateCount = 0
-                            let lastCoordinate = {
-                                x: xData,
-                                y: yData
-                            }
-                            xData = "0"
-                            yData = "0"
-                            while (data[i] != "}" && i < dataLen) {
-                                if (data[i] == "x") {
-                                    while (data[i] != ":" && i < dataLen)
-                                        i++
-                                    i++
-                                    while (data[i] != "," && i < dataLen) {
-                                        xData = xData + data[i]
-                                        i++
-                                    }
-                                    xData = Number(xData)
+    if (paths.length == 0) {
+        $.get('Assets/GameData/AsteroidDefensePaths.txt', function(data) {
+            let dataLen = data.length,
+                i = 0
+            while (i < dataLen) {
+                if (data[i] == "[") {
+                    let coordinateCount = 0,
+                        xData = "0",
+                        yData = "0"
+                    paths.push([])
+                    while (data[i] != "]" && i < dataLen) {
+                        if (data[i] == "{") {
+                            if (coordinateCount == pathSmoothingIndex) {
+                                coordinateCount = 0
+                                let lastCoordinate = {
+                                    x: xData,
+                                    y: yData
                                 }
-                                else if (data[i] == "y") {
-                                    while (data[i] != ":" && i < dataLen)
+                                xData = "0"
+                                yData = "0"
+                                while (data[i] != "}" && i < dataLen) {
+                                    if (data[i] == "x") {
+                                        while (data[i] != ":" && i < dataLen)
+                                            i++
                                         i++
-                                    i++
-                                    while (data[i] != "}" && i < dataLen) {
-                                        yData = yData + data[i]
-                                        i++
+                                        while (data[i] != "," && i < dataLen) {
+                                            xData = xData + data[i]
+                                            i++
+                                        }
+                                        xData = Number(xData)
                                     }
-                                    yData = Number(yData)
+                                    else if (data[i] == "y") {
+                                        while (data[i] != ":" && i < dataLen)
+                                            i++
+                                        i++
+                                        while (data[i] != "}" && i < dataLen) {
+                                            yData = yData + data[i]
+                                            i++
+                                        }
+                                        yData = Number(yData)
+                                    }
+                                    else
+                                        i++
                                 }
-                                else
-                                    i++
-                            }
-
-                            let dy = yData - lastCoordinate.y,
-                                dx = xData - lastCoordinate.x
-                                radian = Math.atan(dy / dx),
-                                hypotenuse = Math.sqrt((dy ** 2) + (dx ** 2)) / pathSmoothingIndex
-
-                            if (Math.sign(dx) == -1)
-                                radian = radian + Math.PI
-
-                            if (paths[paths.length - 1].length == 0 && radian >= 1.3 && radian <= 1.58)
-                                continue
-
-                            if (paths[paths.length - 1].length == 0)
-                                paths[paths.length - 1].push({r: 0, h: xData, x: 0
+    
+                                let dy = yData - lastCoordinate.y,
+                                    dx = xData - lastCoordinate.x
+                                    radian = Math.atan(dy / dx),
+                                    hypotenuse = Math.sqrt((dy ** 2) + (dx ** 2)) / pathSmoothingIndex
+    
+                                if (Math.sign(dx) == -1)
+                                    radian = radian + Math.PI
+    
+                                if (paths[paths.length - 1].length == 0 && radian >= 1.3 && radian <= 1.58)
+                                    continue
+    
+                                if (paths[paths.length - 1].length == 0)
+                                    paths[paths.length - 1].push({r: 0, h: xData, x: 0
+                                        , y: yData})
+                                
+                                for (let i = 1; i <= pathSmoothingIndex; i++) {
+                                    paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), x: xData
                                     , y: yData})
-                            
-                            for (let i = 1; i <= pathSmoothingIndex; i++) {
-                                paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), x: xData
-                                , y: yData})
-                            } 
-                            coordinateCount++
+                                } 
+                                coordinateCount++
+                            }
+                            else
+                                coordinateCount++
+                            i++
                         }
                         else
-                            coordinateCount++
-                        i++
+                            i++
                     }
-                    else
-                        i++
                 }
+                else
+                    i++
             }
-            else
-                i++
-        }
-
-        for (let i = 0; i < paths.length; i++) {
-            let pathLen = paths[i].length
-            for (let j = 1; j < pathLen - 1; j++) {
-                if ((paths[i][j+1].r - paths[i][j].r) != 0) {
-                    let dr = (paths[i][j+1].r - paths[i][j].r) / pathSmoothingIndex
-                    let initialVal = paths[i][j].r
-                    for (let k = 0; k < pathSmoothingIndex - 1; k++)
-                        paths[i][j - k].r = initialVal + (dr * (pathSmoothingIndex - k)) 
-                }
-            }
-        }
-        pathsLoaded = true
-    }, "text")
-
     
+            for (let i = 0; i < paths.length; i++) {
+                let pathLen = paths[i].length
+                for (let j = 1; j < pathLen - 1; j++) {
+                    if ((paths[i][j+1].r - paths[i][j].r) != 0) {
+                        let dr = (paths[i][j+1].r - paths[i][j].r) / pathSmoothingIndex
+                        let initialVal = paths[i][j].r
+                        for (let k = 0; k < pathSmoothingIndex - 1; k++)
+                            paths[i][j - k].r = initialVal + (dr * (pathSmoothingIndex - k)) 
+                    }
+                }
+            }
+            pathsLoaded = true
+        }, "text")
+    }
+    else
+        pathsLoaded = true
 
     $("#placeTower").on("click", function () {
         let i = 0
@@ -337,7 +339,7 @@ function runAsteroid() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
             
-            let spawn1 = spawnSprites (50, 1000, 0.7, "Assets/Sprites/drone.png", 100, 1.5)
+            let spawn1 = spawnSprites (10, 1000, 1, "Assets/Sprites/drone.png", 100, 1.5)
             let spawn1Interval = setInterval(function() {
                 if (spawn1 == 0) {
                     clearInterval(spawn1Interval)
