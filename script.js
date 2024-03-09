@@ -151,12 +151,16 @@ function getRandomNum(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
 // Returns a 50/50 boolean
 function headsOrTails () {
     return Math.random() < 0.5
 }
 
-// function that defines a sprite type in a wave.
+// function that defines a enemy sprite type.
 function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, sizeMod) {
     let sprites = []
     for (let i = 0; i < numOfSprites; i++) {
@@ -168,7 +172,7 @@ function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, si
             image: new Image(),
             width: 0,
             height: 0,
-            path: true,//headsOrTails(),
+            path: getRandomInt(paths.length),
             index: 0,
         })
         sprites[i].image.src = imageSrc
@@ -198,22 +202,13 @@ function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, si
                     yf,
                     xi = sprites[i].x,
                     yi = sprites[i].y
-                if (sprites[i].path) {
-                    if (roundedIndex >= path1Len - 1) 
-                        continue
-                    xf = path1[roundedIndex].x,
-                    yf = path1[roundedIndex].y
-                    if (sprites[i].index < path1Len - 1) 
-                        sprites[i].index = sprites[i].index + sprites[i].speed
-                }
-                else {
-                    if (roundedIndex >= path2Len - 1) 
-                        continue
-                    xf = path2[roundedIndex].x,
-                    yf = path2[roundedIndex].y
-                    if (sprites[i].index < path2Len - 1) 
-                        sprites[i].index = sprites[i].index + sprites[i].speed
-                }
+
+                if (roundedIndex >= paths[sprites[i].path].length - 1) 
+                    continue
+                xf = paths[sprites[i].path][roundedIndex].x,
+                yf = paths[sprites[i].path][roundedIndex].y
+                if (sprites[i].index < paths[sprites[i].path].length - 1) 
+                    sprites[i].index = sprites[i].index + sprites[i].speed
                 
                 let dx = (xf - xi),
                     dy = (yf - yi),
@@ -232,25 +227,16 @@ function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, si
                 context.drawImage(sprites[i].image, ((-sprites[i].width / 2) + hypotenuse), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
                 context.restore()
 
-                sprites[i].x = path1[roundedIndex].x
-                sprites[i].y = path1[roundedIndex].y
+                sprites[i].x = paths[sprites[i].path][roundedIndex].x
+                sprites[i].y = paths[sprites[i].path][roundedIndex].y
             }
 
             let spriteOnScreen = false
             for (let i = 0; i < numOfSprites; i++) {
-                if (sprites[i].path) {
-                    if (sprites[i].index < path1Len - 1) {
-                        spriteOnScreen = true
-                        break
-                    }
+                if (sprites[i].index < paths[sprites[i].path].length - 1) {
+                    spriteOnScreen = true
+                    break
                 }
-                else {
-                    if (sprites[i].index < path2Len - 1) {
-                        spriteOnScreen = true
-                        break
-                    }
-                }
-                
             }
             if (spriteOnScreen) 
                 requestAnimationFrame(animate)
@@ -264,19 +250,16 @@ function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, si
 }
 
 // Begins Asteroid defense map spawning.
-let path1 = [],
-    path2 = [],
-    path1Len,
-    path2Len
+let paths = []
 function runAsteroid() {
     // Load Paths
     let pathsLoaded = false
     $.get('Assets/GameData/AsteroidDefensePaths.txt', function(data) {
         let dataLen = data.length,
-            i = 0,
-            path1Complete = false
+            i = 0
         while (i < dataLen) {
             if (data[i] == "[") {
+                paths.push([])
                 while (data[i] != "]" && i < dataLen) {
                     if (data[i] == "{") {
                         let xData = "",
@@ -305,34 +288,27 @@ function runAsteroid() {
                             else
                                 i++
                         }
-                        if (path1Complete)
-                            path2.push({x: xData, y: yData})
-                        else
-                            path1.push({x: xData, y: yData})
+                        paths[paths.length - 1].push({x: xData, y: yData})
                     }
                     else
                         i++
                 }
             }
-            else if (data[i] == "]" && path1Complete == false) 
-                path1Complete = true
             else
                 i++
         }
         pathsLoaded = true
-    
     }, "text")
 
     $("#placeTower").on("click", function () {
         let i = 0
     })
+
     let checkLoading = setInterval (function() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
-            path1Len = path1.length,
-            path2Len = path2.length
             
-            let spawn1 = spawnSprites (50, 1000, 1, "Assets/Sprites/drone.png", 100, 1)
+            let spawn1 = spawnSprites (20, 1000, 1, "Assets/Sprites/drone.png", 100, 1)
             let spawn1Interval = setInterval(function() {
                 if (spawn1 == 0) {
                     clearInterval(spawn1Interval)
