@@ -80,6 +80,14 @@ function createPath () {
     })
 }
 
+function edges () {
+    let style = $("#edgeContainer")[0].style.display
+    if (style == "none")
+        $("#edgeContainer")[0].style.display = "block"
+    else
+        $("#edgeContainer")[0].style.display = "none"
+}
+
 // Returns mouse position on canvas
 function getMousePos(canvas, evt) {
     var rect = canvas.getBoundingClientRect(), // abs. size of element
