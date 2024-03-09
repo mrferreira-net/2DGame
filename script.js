@@ -339,7 +339,7 @@ function runAsteroid() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
             
-            let spawn1 = spawnSprites (10, 1000, 1, "Assets/Sprites/drone.png", 100, 1.5)
+            let spawn1 = spawnSprites (10, 1000, 1, "Assets/Sprites/drone.png", 100, 1.2)
             let spawn1Interval = setInterval(function() {
                 if (spawn1 == 0) {
                     clearInterval(spawn1Interval)
