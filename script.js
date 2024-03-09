@@ -31,7 +31,7 @@ function play() {
                 runAsteroid()
                 clearInterval(wait)
             }
-        }, 10)
+        }, 1000)
     }
         
 }
@@ -39,7 +39,8 @@ function play() {
 // test function that runs game
 function test() {
     container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')"
-    gameControls.style.display = "none"
+    gameControls.style.display = "block"
+    display.style.display = "block"
     mapsControls.style.display = "none"
     settingsControls.style.display = "none"
     menuControls.style.display = "none"
@@ -107,7 +108,7 @@ function screenTransition(event) {
     let transitionScreen = $('#transitionScreen')[0],
         opacity = 0,
         madeOpaque = false
-    transitionScreen.style.zIndex = "1"
+    transitionScreen.style.zIndex = "5"
     
 
     let animate = setInterval(function () {
@@ -127,6 +128,7 @@ function screenTransition(event) {
             mapsControls.style.display = "none"
             settingsControls.style.display = "none"
             menuControls.style.display = "none"
+            display.style.display = "none"
             container.style.backgroundImage = "url('Assets/Backgrounds/menu.png')"
             if (string == "Main Menu") {
                 menuControls.style.display = "block"
@@ -138,6 +140,7 @@ function screenTransition(event) {
                 mapsControls.style.display = "block"
             else { 
                 gameControls.style.display = "block"
+                display.style.display = "block"
                 container.style.backgroundImage = "url('Assets/Backgrounds/" + string + ".png')"
             }
         }
@@ -338,14 +341,12 @@ function runAsteroid() {
     let checkLoading = setInterval (function() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
-            
             let spawn1 = spawnSprites (10, 1000, 1, "Assets/Sprites/drone.png", 100, 1.2)
             let spawn1Interval = setInterval(function() {
                 if (spawn1 == 0) {
                     clearInterval(spawn1Interval)
                 }
             }, 2000)
-
         }
     }, 1000)
     
