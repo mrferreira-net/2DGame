@@ -238,16 +238,16 @@ function runAsteroid() {
     let pathsLoaded = false
     $.get('Assets/GameData/AsteroidDefensePaths.txt', function(data) {
         let dataLen = data.length,
-            i = 0,
-            coordinateCount = 0,
-            xData = "0",
-            yData = "0"
+            i = 0
         while (i < dataLen) {
             if (data[i] == "[") {
+                let coordinateCount = 0,
+                    xData = "0",
+                    yData = "0"
                 paths.push([])
                 while (data[i] != "]" && i < dataLen) {
                     if (data[i] == "{") {
-                        if (coordinateCount == 0 || coordinateCount == pathSmoothingIndex) {
+                        if (coordinateCount == pathSmoothingIndex) {
                             coordinateCount = 0
                             let lastCoordinate = {
                                 x: xData,
@@ -280,9 +280,6 @@ function runAsteroid() {
                                     i++
                             }
 
-                            if (paths[paths.length - 1].length > 800) {
-                                let p = 0
-                            }
                             let dy = yData - lastCoordinate.y,
                                 dx = xData - lastCoordinate.x
                                 radian = Math.atan(dy / dx),
@@ -290,9 +287,18 @@ function runAsteroid() {
 
                             if (Math.sign(dx) == -1)
                                 radian = radian + Math.PI
+
+                            if (paths[paths.length - 1].length == 0 && radian >= 1.3 && radian <= 1.58)
+                                continue
+
+                            if (paths[paths.length - 1].length == 0)
+                                paths[paths.length - 1].push({r: 0, h: xData, x: 0
+                                    , y: yData})
                             
-                            for (let i = 1; i <= pathSmoothingIndex; i++) 
-                                paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), x: xData, y: yData})
+                            for (let i = 1; i <= pathSmoothingIndex; i++) {
+                                paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), x: xData
+                                , y: yData})
+                            } 
                             coordinateCount++
                         }
                         else
@@ -305,6 +311,18 @@ function runAsteroid() {
             }
             else
                 i++
+        }
+
+        for (let i = 0; i < paths.length; i++) {
+            let pathLen = paths[i].length
+            for (let j = 1; j < pathLen - 1; j++) {
+                if ((paths[i][j+1].r - paths[i][j].r) != 0) {
+                    let dr = (paths[i][j+1].r - paths[i][j].r) / pathSmoothingIndex
+                    let initialVal = paths[i][j].r
+                    for (let k = 0; k < pathSmoothingIndex - 1; k++)
+                        paths[i][j - k].r = initialVal + (dr * (pathSmoothingIndex - k)) 
+                }
+            }
         }
         pathsLoaded = true
     }, "text")
@@ -319,7 +337,7 @@ function runAsteroid() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
             
-            let spawn1 = spawnSprites (50, 1000, 1, "Assets/Sprites/drone.png", 100, 1)
+            let spawn1 = spawnSprites (50, 1000, 0.7, "Assets/Sprites/drone.png", 100, 1.5)
             let spawn1Interval = setInterval(function() {
                 if (spawn1 == 0) {
                     clearInterval(spawn1Interval)
