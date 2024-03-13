@@ -30,8 +30,7 @@ $(document).ready(function () {
     spriteContext.lineWidth = 0.1
     spriteContext.strokeStyle = "white"
 
-    //temp
-    test()
+    //test()
 })
 
 let images = {
