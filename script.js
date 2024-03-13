@@ -1,27 +1,58 @@
 let pathSmoothingIndex = 12
-
+let spawnRate = 1000
 // Waits for document to be ready before running JS code
-let display,
+let spriteLayer,
+    spriteContext,
+    towerLayer,
+    towerContext,
+    pointerLayer,
+    pointerContext,
     container,
-    context,
     gameControls,
     mapsControls,
     settingsControls,
-    menuControls
+    menuControls,
+    edgeContainer
 $(document).ready(function () {
-    display = $('#display')[0]
+    spriteLayer = $('#spriteLayer')[0]
+    spriteContext = spriteLayer.getContext("2d")
+    towerLayer = $('#towerLayer')[0]
+    towerContext = towerLayer.getContext("2d")
+    pointerLayer = $('#pointerLayer')[0]
+    pointerContext = pointerLayer.getContext("2d")
     container = $('#container')[0]
-    context = display.getContext("2d")
     gameControls = $('#gameControls')[0]
     mapsControls = $('#mapsControls')[0]
     settingsControls = $('#settingsControls')[0]
     menuControls = $('#menuControls')[0]
-    context.imageSmoothingEnabled = false
-    context.lineWidth = 0.1
-    context.strokeStyle = "white"
+    edgeContainer = $("#edgeContainer")[0]
+    spriteContext.imageSmoothingEnabled = false
+    spriteContext.lineWidth = 0.1
+    spriteContext.strokeStyle = "white"
+
+    //temp
+    test()
 })
 
+let images = {
+    drone: new Image(),
+    mcannon: new Image(),
+    test1: new Image(),
+    test2: new Image(),
+}
+images.drone.src = "Assets/Sprites/drone.png"
+images.mcannon.src = "Assets/Sprites/missileCannon.png"
+images.test1.src = "Assets/Sprites/testsprite1.png"
+images.test2.src = "Assets/Sprites/testsprite2.png"
+
+images.test2.onload = function () {
+    $("#loadingScreen")[0].style.display = "none"
+}
+
 // executes when play button is pressed
+let paths = []
+let towers = []
+let sprites = []
 function play() {
     let map = $('#mapPreviewText').html()
     if (map == "Asteroid Defense") {
@@ -38,9 +69,11 @@ function play() {
 
 // test function that runs game
 function test() {
+    reset()
     container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')"
     gameControls.style.display = "block"
-    display.style.display = "block"
+    spriteLayer.style.display = "block"
+    towerLayer.style.display = "block"
     mapsControls.style.display = "none"
     settingsControls.style.display = "none"
     menuControls.style.display = "none"
@@ -56,10 +89,10 @@ function createPath () {
     settingsControls.style.display = "none"
     menuControls.style.display = "none"
 
-    display.style.pointerEvents = "auto"
+    spriteLayer.style.pointerEvents = "auto"
     let mouseDown = false
-    $("#display").on("mousemove", function (evt) {
-        let position = getMousePos(display, evt)
+    $("#spriteLayer").on("pointermove", function (evt) {
+        let position = getMousePos(spriteLayer, evt)
         if (mouseDown) {
             let lastPositionIndex = createdPath.length - 1
             createdPath.push({
@@ -67,25 +100,17 @@ function createPath () {
                 y: position.y
             })
             if (lastPositionIndex >= 0)
-                context.moveTo(createdPath[lastPositionIndex].x, createdPath[lastPositionIndex].y)
-            context.lineTo(position.x, position.y)
-            context.stroke()
+                spriteContext.moveTo(createdPath[lastPositionIndex].x, createdPath[lastPositionIndex].y)
+            spriteContext.lineTo(position.x, position.y)
+            spriteContext.stroke()
         }
     })
-    $(document).on("mousedown", function () {
+    $(document).on("pointerdown", function () {
         mouseDown = true
     })
-    $(document).on("mouseup", function () {
+    $(document).on("pointerup", function () {
         mouseDown = false //BREAK POINT HERE
     })
-}
-
-function edges () {
-    let style = $("#edgeContainer")[0].style.display
-    if (style == "none")
-        $("#edgeContainer")[0].style.display = "block"
-    else
-        $("#edgeContainer")[0].style.display = "none"
 }
 
 // Returns mouse position on canvas
@@ -98,7 +123,18 @@ function getMousePos(canvas, evt) {
       x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
       y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
     }
-  }
+}
+
+function reset () {
+    clearInterval(checkLoading)
+    clearInterval(towerDraw)
+    clearInterval(spawning)
+    paths = []
+    towers = []
+    sprites = []
+    spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
+    towerContext.clearRect(0, 0, towerLayer.width, towerLayer.height)
+}
 
 // Executes screen transitions between menus and the game
 let transitionEnd = false
@@ -116,7 +152,7 @@ function screenTransition(event) {
     let transitionScreen = $('#transitionScreen')[0],
         opacity = 0,
         madeOpaque = false
-    transitionScreen.style.zIndex = "5"
+    transitionScreen.style.zIndex = "4"
     
 
     let animate = setInterval(function () {
@@ -136,11 +172,12 @@ function screenTransition(event) {
             mapsControls.style.display = "none"
             settingsControls.style.display = "none"
             menuControls.style.display = "none"
-            display.style.display = "none"
+            spriteLayer.style.display = "none"
+            towerLayer.style.display = "none"
             container.style.backgroundImage = "url('Assets/Backgrounds/menu.png')"
             if (string == "Main Menu") {
                 menuControls.style.display = "block"
-                context.clearRect(0, 0, display.width, display.height)
+                reset()
             }
             else if (string == "Settings")
                 settingsControls.style.display = "block"
@@ -148,7 +185,8 @@ function screenTransition(event) {
                 mapsControls.style.display = "block"
             else { 
                 gameControls.style.display = "block"
-                display.style.display = "block"
+                spriteLayer.style.display = "block"
+                towerLayer.style.display = "block"
                 container.style.backgroundImage = "url('Assets/Backgrounds/" + string + ".png')"
             }
         }
@@ -173,77 +211,72 @@ function headsOrTails () {
     return Math.random() < 0.5
 }
 
-// function that defines a enemy sprite type.
-function spawnSprites(numOfSprites, spawnRate, spriteSpeed, imageSrc, health, sizeMod) {
-    let sprites = []
+// function that appends sprites to sprites array
+function appendSpriteArray (numOfSprites, spriteSpeed, imageSrc, health, sizeMod) {
     for (let i = 0; i < numOfSprites; i++) {
         sprites.push({
             hp: health, 
             x: 0,
             y: 0,
             speed: spriteSpeed,
-            image: new Image(),
-            width: 0,
-            height: 0,
+            image: imageSrc,
+            width: imageSrc.width * sizeMod,
+            height: imageSrc.height * sizeMod,
             path: getRandomInt(paths.length),
-            index: 0
+            index: 0,
         })
-        sprites[i].image.src = imageSrc
     }
-    
-    sprites[numOfSprites - 1].image.onload = function () {
+}
+
+// function that spawns sprites in sprite array
+let spawning
+function spawnSprites(numOfSprites) {
+    let spawned = 0
+    spawning = setInterval(function () {
+        if (spawned == 0)
+            animate()
+        if (spawned < numOfSprites) 
+            spawned++
+        else
+            clearInterval(spawning)
+    }, spawnRate)
+    function animate() {
+        // Clear display
+        spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
+        for (let i = 0; i < spawned; i++) {
+            let roundedIndex = Math.round(sprites[i].index)
+
+            if (roundedIndex >= paths[sprites[i].path].length - 1) 
+                continue
+
+            if (sprites[i].index < paths[sprites[i].path].length - 1) 
+                sprites[i].index = sprites[i].index + sprites[i].speed
+            
+            spriteContext.save()
+            spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
+            spriteContext.rotate(paths[sprites[i].path][roundedIndex].r)
+            spriteContext.drawImage(sprites[i].image, ((-sprites[i].width / 2) + paths[sprites[i].path][roundedIndex].h), 
+            (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
+            spriteContext.restore()
+        }
+
+        let spriteOnScreen = false
         for (let i = 0; i < numOfSprites; i++) {
-            sprites[i].width = sprites[i].image.width * sizeMod
-            sprites[i].height = sprites[i].image.height * sizeMod
+            if (sprites[i].index < paths[sprites[i].path].length - 1) {
+                spriteOnScreen = true
+                break
+            }
         }
-        let spawned = 0,
-            spawning = setInterval(function () {
-                if (spawned == 0)
-                    animate()
-                if (spawned < numOfSprites) 
-                    spawned++
-                else
-                    clearInterval(spawning)
-            }, spawnRate)
-        function animate() {
-            // Clear display
-            context.clearRect(0, 0, display.width, display.height)
-            for (let i = 0; i < spawned; i++) {
-                let roundedIndex = Math.round(sprites[i].index)
-
-                if (roundedIndex >= paths[sprites[i].path].length - 1) 
-                    continue
-
-                if (sprites[i].index < paths[sprites[i].path].length - 1) 
-                    sprites[i].index = sprites[i].index + sprites[i].speed
-                
-                context.save()
-                context.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
-                context.rotate(paths[sprites[i].path][roundedIndex].r)
-                context.drawImage(sprites[i].image, ((-sprites[i].width / 2) + paths[sprites[i].path][roundedIndex].h), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
-                context.restore()
-            }
-
-            let spriteOnScreen = false
-            for (let i = 0; i < numOfSprites; i++) {
-                if (sprites[i].index < paths[sprites[i].path].length - 1) {
-                    spriteOnScreen = true
-                    break
-                }
-            }
-            if (spriteOnScreen) 
-                requestAnimationFrame(animate)
-            else {
-                context.clearRect(0, 0, display.width, display.height)
-                return 0
-            }
-                
-        }
+        if (spriteOnScreen) 
+            requestAnimationFrame(animate)
+        else 
+            spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)   
     }
 }
 
 // Begins Asteroid defense map spawning.
-let paths = []
+let towerDraw
+let checkLoading
 function runAsteroid() {
     // Load Paths
     let pathsLoaded = false
@@ -254,19 +287,20 @@ function runAsteroid() {
             while (i < dataLen) {
                 if (data[i] == "[") {
                     let coordinateCount = 0,
-                        xData = "0",
-                        yData = "0"
+                        xData = 0,
+                        yData = 0,
+                        firstCoordinate = true
                     paths.push([])
                     while (data[i] != "]" && i < dataLen) {
                         if (data[i] == "{") {
-                            if (coordinateCount == pathSmoothingIndex) {
+                            if (coordinateCount == pathSmoothingIndex || firstCoordinate) {
                                 coordinateCount = 0
                                 let lastCoordinate = {
                                     x: xData,
                                     y: yData
                                 }
-                                xData = "0"
-                                yData = "0"
+                                xData = 0
+                                yData = 0
                                 while (data[i] != "}" && i < dataLen) {
                                     if (data[i] == "x") {
                                         while (data[i] != ":" && i < dataLen)
@@ -291,26 +325,22 @@ function runAsteroid() {
                                     else
                                         i++
                                 }
-    
-                                let dy = yData - lastCoordinate.y,
-                                    dx = xData - lastCoordinate.x
-                                    radian = Math.atan(dy / dx),
-                                    hypotenuse = Math.sqrt((dy ** 2) + (dx ** 2)) / pathSmoothingIndex
-    
-                                if (Math.sign(dx) == -1)
-                                    radian = radian + Math.PI
-    
-                                if (paths[paths.length - 1].length == 0 && radian >= 1.3 && radian <= 1.58)
-                                    continue
-    
-                                if (paths[paths.length - 1].length == 0)
-                                    paths[paths.length - 1].push({r: 0, h: xData, x: 0
+                            
+                                if (firstCoordinate == false) {
+                                    let dy = yData - lastCoordinate.y,
+                                        dx = xData - lastCoordinate.x
+                                        radian = Math.atan(dy / dx),
+                                        hypotenuse = Math.sqrt((dy ** 2) + (dx ** 2)) / pathSmoothingIndex
+        
+                                    if (Math.sign(dx) == -1)
+                                        radian = radian + Math.PI
+        
+                                    for (let i = 1; i <= pathSmoothingIndex; i++) {
+                                        paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), x: xData
                                         , y: yData})
-                                
-                                for (let i = 1; i <= pathSmoothingIndex; i++) {
-                                    paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), x: xData
-                                    , y: yData})
+                                    } 
                                 } 
+                                firstCoordinate = false
                                 coordinateCount++
                             }
                             else
@@ -336,26 +366,72 @@ function runAsteroid() {
                     }
                 }
             }
-            pathsLoaded = true
+
+            $("#edgeContainer").load("Assets/GameData/AsteroidDefenseEdges.html", function () {
+                pathsLoaded = true
+            })
+
         }, "text")
     }
     else
         pathsLoaded = true
 
-    $("#placeTower").on("click", function () {
-        let i = 0
+    // handles tower placement, it's animation, and appending tower to towers array
+    $("#missileCannon").on("click", function (evt) {
+        placeTower(images.mcannon, 0, 0, 100, "missileCannon", evt)
     })
+    function placeTower (imageSrc, towerWidth, towerHeight, range, id, evt) {
+        pointerLayer.style.pointerEvents = "auto"
+        edgeContainer.style.pointerEvents = "auto"
+        $('[class="edge"').each(function () {
+            $(this)[0].style.backgroundColor = "rgba(0, 255, 149, 0.315)"
+        })
+        function animate (evt) {
+            position = getMousePos(pointerLayer, evt)
+            posX = position.x - (imageSrc.width / 2)
+            posY = position.y - (imageSrc.height / 2)
+            pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+            pointerContext.drawImage(imageSrc, posX, posY)
+        }
+        let position,
+            posX,
+            posY
+        animate(evt)
+        $("#pointerLayer").on("pointermove", function (evt) {
+            animate(evt)
+        })
+        $("#pointerLayer").on("pointerdown", function () {
+            pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+            pointerLayer.style.pointerEvents = "none"
+        })
+        $(".edge").on("pointerup", function () {
+            edgeContainer.style.pointerEvents = "none"
+            towers.push({
+                x: posX,
+                y: posY,
+                image: imageSrc,
+                width: 0,
+                height: 0
+            })
+            $('[class="edge"').each(function () {
+                $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
+            })
+        })
+    }
 
-    let checkLoading = setInterval (function() {
+    towerDraw = setInterval (function () {
+        for (let i = 0; i < towers.length; i++) {
+            towerContext.drawImage(towers[i].image, towers[i].x, towers[i].y)
+        }
+    }, 100)
+
+    checkLoading = setInterval (function() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
-            let spawn1 = spawnSprites (10, 1000, 1, "Assets/Sprites/drone.png", 100, 1.2)
-            let spawn1Interval = setInterval(function() {
-                if (spawn1 == 0) {
-                    clearInterval(spawn1Interval)
-                }
-            }, 2000)
+            appendSpriteArray(4, 1, images.drone, 100, 1.2)
+            appendSpriteArray(2, 1, images.drone, 100, 3)
+            appendSpriteArray(4, 1, images.drone, 100, 1.2)
+            spawnSprites(sprites.length)
         }
     }, 1000)
-    
 }
