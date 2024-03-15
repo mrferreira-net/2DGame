@@ -1,5 +1,5 @@
 let pathSmoothingIndex = 12
-let spawnRate = 1000
+let spawnRate = 1100
 // Waits for document to be ready before running JS code
 let spriteLayer,
     spriteContext,
@@ -29,29 +29,58 @@ $(document).ready(function () {
     spriteContext.imageSmoothingEnabled = false
     spriteContext.lineWidth = 0.1
     spriteContext.strokeStyle = "white"
+    pointerContext.fillStyle = "rgba(0, 247, 255, 0.452)"
+    pointerContext.strokeStyle = "rgb(161, 241, 255)"
 
+    loading()
     //test()
 })
 
-let images = {
-    drone: new Image(),
-    mcannon: new Image(),
-    test1: new Image(),
-    test2: new Image(),
-}
-images.drone.src = "Assets/Sprites/drone.png"
-images.mcannon.src = "Assets/Sprites/missileCannon.png"
-images.test1.src = "Assets/Sprites/testsprite1.png"
-images.test2.src = "Assets/Sprites/testsprite2.png"
+let images
+function loading () {
+    images = {
+        drone: new Image(),
+        mcannon: new Image(),
+        menace: new Image(),
+        test1: new Image(),
+        test2: new Image(),
+        asteroidL: new Image(),
+        asteroidB: new Image(),
+        menuB: new Image(),
+        transitionB: new Image(),
+    }
 
-images.test2.onload = function () {
-    $("#loadingScreen")[0].style.display = "none"
+    images.drone.src = "Assets/Sprites/drone.png"
+    images.mcannon.src = "Assets/Sprites/missileCannon.png"
+    images.menace.src = "Assets/Sprites/MenaceSprite.png"
+    images.test1.src = "Assets/Sprites/testsprite1.png"
+    images.test2.src = "Assets/Sprites/testsprite2.png"
+    
+    let boolArray = []
+    for (let i in images) 
+        boolArray.push({bool:false})
+    
+    images.drone.onload = function () {boolArray[0].bool = true}
+    images.mcannon.onload = function () {boolArray[1].bool = true}
+    images.menace.onload = function () {boolArray[2].bool = true}
+    images.test1.onload = function () {boolArray[3].bool = true}
+    images.test2.onload = function () {boolArray[4].bool = true}
+
+    let checkLoading = setInterval (function () {
+        let boolArrayLen = boolArray.length
+        for (let i = 0; i < boolArrayLen; i++) {
+            if (boolArray[i].bool == false)
+                return
+            $("#loadingScreen")[0].style.display = "none"
+            clearInterval(checkLoading)
+        }
+    }, 1000)
 }
 
 // executes when play button is pressed
-let paths = []
-let towers = []
-let sprites = []
+let paths = [],
+    towers = [],
+    sprites = []
 function play() {
     let map = $('#mapPreviewText').html()
     if (map == "Asteroid Defense") {
@@ -277,6 +306,7 @@ function spawnSprites(numOfSprites) {
 let towerDraw
 let checkLoading
 function runAsteroid() {
+    $("#edgeLayer")[0].style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"
     // Load Paths
     let pathsLoaded = false
     if (paths.length == 0) {
@@ -377,24 +407,29 @@ function runAsteroid() {
 
     // handles tower placement, it's animation, and appending tower to towers array
     $("#missileCannon").on("click", function (evt) {
-        placeTower(images.mcannon, 0, 0, 100, "missileCannon", evt)
+        placeTower(images.mcannon, 1, 100, "missileCannon", evt)
     })
-    function placeTower (imageSrc, towerWidth, towerHeight, range, id, evt) {
+    function placeTower (imageSrc, sizeMod, range, id, evt) {
         pointerLayer.style.pointerEvents = "auto"
-        edgeContainer.style.pointerEvents = "auto"
         $('[class="edge"').each(function () {
             $(this)[0].style.backgroundColor = "rgba(0, 255, 149, 0.315)"
+            $(this)[0].style.pointerEvents = "auto"
         })
         function animate (evt) {
             position = getMousePos(pointerLayer, evt)
-            posX = position.x - (imageSrc.width / 2)
-            posY = position.y - (imageSrc.height / 2)
+            posX = position.x - (imageSrc.width * sizeMod / 2)
+            posY = position.y - (imageSrc.height * sizeMod / 2)
             pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
-            pointerContext.drawImage(imageSrc, posX, posY)
+            pointerContext.beginPath();
+            pointerContext.arc(position.x, position.y, range, 0, 2 * Math.PI);
+            pointerContext.fill()
+            pointerContext.stroke();
+            pointerContext.drawImage(imageSrc, posX, posY, (imageSrc.width * sizeMod), (imageSrc.height * sizeMod))
         }
         let position,
             posX,
-            posY
+            posY,
+            towerDown = false
         animate(evt)
         $("#pointerLayer").on("pointermove", function (evt) {
             animate(evt)
@@ -404,32 +439,46 @@ function runAsteroid() {
             pointerLayer.style.pointerEvents = "none"
         })
         $(".edge").on("pointerup", function () {
-            edgeContainer.style.pointerEvents = "none"
-            towers.push({
-                x: posX,
-                y: posY,
-                image: imageSrc,
-                width: 0,
-                height: 0
-            })
-            $('[class="edge"').each(function () {
-                $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
-            })
+            if (towerDown == false) {
+                $('[class="edge"').each(function () {
+                    $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
+                    $(this)[0].style.pointerEvents = "none"
+                })
+                towers.push({
+                    x: posX,
+                    y: posY,
+                    image: imageSrc,
+                    width: 0,
+                    height: 0
+                })
+            }
+            towerDown = true
         })
     }
 
     towerDraw = setInterval (function () {
+        let towersLen = towers.length
+        towerContext.clearRect(0, 0, towerLayer.width, towerLayer.height)
         for (let i = 0; i < towers.length; i++) {
+            //towerContext.save()
+            //towerContext.translate(towers[i].x, towers[i].y)
+            let spritesLen = sprites.length
+            for (let j = 0; j < spritesLen; j++) {
+                if (Math.sqrt(((sprites[i].x - towers[i].x) ** 2) + ((sprites[i].y - towers[i].y) ** 2)) < 100) {
+
+                }
+            }
+            //towerContext.rotate()
             towerContext.drawImage(towers[i].image, towers[i].x, towers[i].y)
+            //towerContext.restore()
         }
     }, 100)
 
     checkLoading = setInterval (function() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
-            appendSpriteArray(4, 1, images.drone, 100, 1.2)
-            appendSpriteArray(2, 1, images.drone, 100, 3)
-            appendSpriteArray(4, 1, images.drone, 100, 1.2)
+            appendSpriteArray(3, 0.5, images.drone, 100, 1.2)
+            appendSpriteArray(3, 0.5, images.menace, 100, 1.5)
             spawnSprites(sprites.length)
         }
     }, 1000)
