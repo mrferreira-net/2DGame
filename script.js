@@ -31,9 +31,11 @@ $(document).ready(function () {
     spriteContext.strokeStyle = "white"
     pointerContext.fillStyle = "rgba(0, 247, 255, 0.452)"
     pointerContext.strokeStyle = "rgb(161, 241, 255)"
+    towerContext.fillStyle = "rgba(0, 247, 255, 0.452)"
+    towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    //test()
+    test() //temporary
 })
 
 let images
@@ -44,10 +46,7 @@ function loading () {
         menace: new Image(),
         test1: new Image(),
         test2: new Image(),
-        asteroidL: new Image(),
-        asteroidB: new Image(),
-        menuB: new Image(),
-        transitionB: new Image(),
+        polygon: new Image()
     }
 
     images.drone.src = "Assets/Sprites/drone.png"
@@ -55,6 +54,7 @@ function loading () {
     images.menace.src = "Assets/Sprites/MenaceSprite.png"
     images.test1.src = "Assets/Sprites/testsprite1.png"
     images.test2.src = "Assets/Sprites/testsprite2.png"
+    images.polygon.src = "Assets/Sprites/polygon.png"
     
     let boolArray = []
     for (let i in images) 
@@ -65,6 +65,7 @@ function loading () {
     images.menace.onload = function () {boolArray[2].bool = true}
     images.test1.onload = function () {boolArray[3].bool = true}
     images.test2.onload = function () {boolArray[4].bool = true}
+    images.polygon.onload = function () {boolArray[5].bool = true}
 
     let checkLoading = setInterval (function () {
         let boolArrayLen = boolArray.length
@@ -180,7 +181,7 @@ function screenTransition(event) {
     let transitionScreen = $('#transitionScreen')[0],
         opacity = 0,
         madeOpaque = false
-    transitionScreen.style.zIndex = "4"
+    transitionScreen.style.zIndex = "5"
     
 
     let animate = setInterval(function () {
@@ -281,11 +282,13 @@ function spawnSprites(numOfSprites) {
                 sprites[i].index = sprites[i].index + sprites[i].speed
             
             spriteContext.save()
-            spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
+            spriteContext.translate(paths[sprites[i].path][roundedIndex].baseX, paths[sprites[i].path][roundedIndex].baseY)
             spriteContext.rotate(paths[sprites[i].path][roundedIndex].r)
             spriteContext.drawImage(sprites[i].image, ((-sprites[i].width / 2) + paths[sprites[i].path][roundedIndex].h), 
             (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
             spriteContext.restore()
+            sprites[i].x = paths[sprites[i].path][roundedIndex].x
+            sprites[i].y = paths[sprites[i].path][roundedIndex].y
         }
 
         let spriteOnScreen = false
@@ -365,8 +368,8 @@ function runAsteroid() {
                                         radian = radian + Math.PI
         
                                     for (let i = 1; i <= pathSmoothingIndex; i++) {
-                                        paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), x: xData
-                                        , y: yData})
+                                        paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), baseX: xData
+                                        , baseY: yData, x: 0, y: 0})
                                     } 
                                 } 
                                 firstCoordinate = false
@@ -387,11 +390,25 @@ function runAsteroid() {
             for (let i = 0; i < paths.length; i++) {
                 let pathLen = paths[i].length
                 for (let j = 1; j < pathLen - 1; j++) {
-                    if ((paths[i][j+1].r - paths[i][j].r) != 0) {
-                        let dr = (paths[i][j+1].r - paths[i][j].r) / pathSmoothingIndex
-                        let initialVal = paths[i][j].r
-                        for (let k = 0; k < pathSmoothingIndex - 1; k++)
-                            paths[i][j - k].r = initialVal + (dr * (pathSmoothingIndex - k)) 
+                    if (i == 6 && j ==1402){
+                        let h = 0
+                    }
+                    let ri = paths[i][j].r,
+                        rf = paths[i][j+1].r,
+                        xi = paths[i][j].baseX,
+                        xf = paths[i][j+1].baseX,
+                        yi = paths[i][j].baseY,
+                        yf = paths[i][j+1].baseY
+                    if ((rf - ri) != 0 || (yf - yi) != 0 || (xf - xi) != 0) {
+                        let dr = (rf - ri) / pathSmoothingIndex,
+                            dx = (xf - xi) / pathSmoothingIndex,
+                            dy = (yf - yi) / pathSmoothingIndex
+
+                        for (let k = 0; k < pathSmoothingIndex; k++) {
+                            paths[i][j - k].r = ri + (dr * (pathSmoothingIndex - k - 1))
+                            paths[i][j - k].x = xi + (dx * (pathSmoothingIndex - k - 1)) 
+                            paths[i][j - k].y = yi + (dy * (pathSmoothingIndex - k - 1)) 
+                        }   
                     }
                 }
             }
@@ -407,7 +424,7 @@ function runAsteroid() {
 
     // handles tower placement, it's animation, and appending tower to towers array
     $("#missileCannon").on("click", function (evt) {
-        placeTower(images.mcannon, 1, 100, "missileCannon", evt)
+        placeTower(images.mcannon, 1, 110, "missileCannon", evt)
     })
     function placeTower (imageSrc, sizeMod, range, id, evt) {
         pointerLayer.style.pointerEvents = "auto"
@@ -448,8 +465,12 @@ function runAsteroid() {
                     x: posX,
                     y: posY,
                     image: imageSrc,
-                    width: 0,
-                    height: 0
+                    width: imageSrc.width * sizeMod,
+                    height: imageSrc.height * sizeMod,
+                    range: range,
+                    id: id,
+                    radian: 0,
+                    gTurn: false
                 })
             }
             towerDown = true
@@ -459,26 +480,68 @@ function runAsteroid() {
     towerDraw = setInterval (function () {
         let towersLen = towers.length
         towerContext.clearRect(0, 0, towerLayer.width, towerLayer.height)
-        for (let i = 0; i < towers.length; i++) {
-            //towerContext.save()
-            //towerContext.translate(towers[i].x, towers[i].y)
-            let spritesLen = sprites.length
-            for (let j = 0; j < spritesLen; j++) {
-                if (Math.sqrt(((sprites[i].x - towers[i].x) ** 2) + ((sprites[i].y - towers[i].y) ** 2)) < 100) {
+        for (let i = 0; i < towersLen; i++) {
+            // TEMP
+            let posX = towers[i].x + (towers[i].width / 2),
+                posY = towers[i].y + (towers[i].height / 2)
+            towerContext.beginPath();
+            towerContext.arc(posX, posY, 100, 0, 2 * Math.PI);
+            towerContext.fill()
+            towerContext.stroke();
 
+            let spritesLen = sprites.length,
+                hypotenuse,
+                radian
+            for (let j = 0; j < spritesLen; j++) {
+                let dx = sprites[j].x - (towers[i].x + (towers[i].width / 2)),
+                    dy = sprites[j].y - (towers[i].y + (towers[i].height / 2))
+                hypotenuse = Math.sqrt((dx ** 2) + (dy ** 2))
+                radian = Math.atan(dy / dx)
+
+                function turnTower () {
+                    towerContext.save()
+                    towerContext.translate(towers[i].x + (towers[i].width / 2), towers[i].y + (towers[i].height / 2))
+                    towerContext.rotate(towers[i].radian)
+                    towerContext.drawImage(towers[i].image, (-towers[i].width / 2), (-towers[i].height / 2), towers[i].width, towers[i].height)
+                    towerContext.restore()
+                }
+                if (Math.sign(dx) == -1)
+                    radian = radian + Math.PI
+                if (hypotenuse < towers[i].range && towers[i].gTurn == false) {
+                    if (Math.abs(radian - towers[i].radian) > 0.174532925) {
+                        towers[i].gTurn = true
+                        let direction = 0
+                        
+                        if (radian + towers[i].radian >= Math.PI )
+                            direction = -1
+                        else
+                            direction = 1
+                        let gradualTurn = setInterval(function () {
+                            if (Math.abs(radian - towers[i].radian) > 0.034906585) 
+                                towers[i].radian = towers[i].radian + (direction * 0.00872664626)
+                            else {
+                                towers[i].gTurn = false
+                                clearInterval(gradualTurn)
+                            }
+                        }, 1)
+                    }
+                    else {
+                        towers[i].radian = radian
+                        turnTower()
+                    }
+                    break
+                }
+                else {
+                    turnTower()
                 }
             }
-            //towerContext.rotate()
-            towerContext.drawImage(towers[i].image, towers[i].x, towers[i].y)
-            //towerContext.restore()
         }
-    }, 100)
+    }, 50)
 
     checkLoading = setInterval (function() {
         if (pathsLoaded) {
             clearInterval(checkLoading)
-            appendSpriteArray(3, 0.5, images.drone, 100, 1.2)
-            appendSpriteArray(3, 0.5, images.menace, 100, 1.5)
+            appendSpriteArray(10, 0.25, images.drone, 100, 1.2)
             spawnSprites(sprites.length)
         }
     }, 1000)
