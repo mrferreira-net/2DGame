@@ -24,7 +24,7 @@ body {
     pointer-events: none;
     position: absolute;
 }
-#towerLayer {
+#towerLayer, #projectileLayer {
     z-index: 3;
     pointer-events: none;
     position: absolute;
