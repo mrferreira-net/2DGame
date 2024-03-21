@@ -127,6 +127,7 @@ function fullscreenButton() {
     else if (button.html() == "Exit Fullscreen") {
         document.exitFullscreen()
         button.html("Fullscreen")
+        clearInterval(checkExit)
 
         container.style.position = "relative"
         container.style.top = "0"
