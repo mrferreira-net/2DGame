@@ -40,8 +40,8 @@
             <canvas id="pointerLayer" height="540" width="960"></canvas>
             <canvas id="projectileLayer" height="540" width="960"></canvas>
 
-            <img src="Assets/Backgrounds/transition.png" id="transitionScreen"></img>
             <div id="edgeLayer" style="z-index: 2; width: 100%; height: 100%; position: absolute; pointer-events: none; display: none;"></div>
+            <div id="edgeContainer"></div>
 
             <menu id="menuControls">
                 <div>
@@ -67,8 +67,6 @@
                 position: absolute; border-radius: 10%; border-bottom-left-radius: 0%;"></div>
                 <div style="z-index: inherit; width: 330px; height: 100px; bottom: 2px; right: 192px; background-color: rgba(0, 0, 0, 0.637);
                 position: absolute; border-radius: 10%; border-bottom-right-radius: 0%; border-top-right-radius: 0%;"></div>
-
-                <div id="edgeContainer"></div>
 
                 <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
                 <div class="gamePanel">

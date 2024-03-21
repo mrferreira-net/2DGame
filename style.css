@@ -123,6 +123,7 @@ a {
     color: rgb(49, 194, 204);
 }
 #loadingScreen {
+    position: absolute;
     background-color: rgb(78, 78, 78);
     z-index: 5;
     width: 100%;
