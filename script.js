@@ -321,9 +321,11 @@ let position,
     posY
 function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
     pointerLayer.style.pointerEvents = "auto"
+    pointerLayer.style.touchAction = "auto"
     $('[class="edge"').each(function () {
         $(this)[0].style.backgroundColor = "rgba(0, 255, 149, 0.315)"
         $(this)[0].style.pointerEvents = "auto"
+        $(this)[0].style.touchAction = "auto"
     })
     function animate (evt) {
         position = getMousePos(pointerLayer, evt)
@@ -346,9 +348,8 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
         animate(evt)
     })
     $("#pointerLayer").on("pointerdown", function () {
-        $("#pointerLayer").off("pointerdown")
-        $("#pointerLayer").off("pointermove")
         pointerLayer.style.pointerEvents = "none"
+        pointerLayer.style.touchAction = "none"
 
         pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
         
@@ -364,6 +365,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
 
         $('[class="edge"').each(function () {
             $(this)[0].style.pointerEvents = "none"
+            $(this)[0].style.touchAction = "none"
         })
     })
     $(".edge").on("pointerup", function () {
@@ -374,6 +376,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
 
         $('[class="edge"').each(function () {
             $(this)[0].style.pointerEvents = "none"
+            $(this)[0].style.touchAction = "none"
         })
 
         let towersLen = towers.length
