@@ -49,7 +49,7 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    //test() //temporary
+    test() //temporary
 })
 
 // Loades all images before user can use the program
@@ -316,6 +316,9 @@ $(document).ready(function () {
         placeTower(images.mcannon, 1, 180, 2000, "missile", evt)
     })
 })
+let position,
+    posX,
+    posY
 function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
     pointerLayer.style.pointerEvents = "auto"
     $('[class="edge"').each(function () {
@@ -337,17 +340,18 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
         pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
         pointerContext.restore()
     }
-    let position,
-        posX,
-        posY
-        //towerDown = false
+
     animate(evt)
     $("#pointerLayer").on("pointermove", function (evt) {
         animate(evt)
     })
     $("#pointerLayer").on("pointerdown", function () {
-        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+        $("#pointerLayer").off("pointerdown")
+        $("#pointerLayer").off("pointermove")
         pointerLayer.style.pointerEvents = "none"
+
+        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+        
         $('[class="edge"').each(function () {
             $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
         })
@@ -357,6 +361,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
         $(".edge").off("pointerdown")
         $("#pointerLayer").off("pointerdown")
         $("#pointerLayer").off("pointermove")
+
         $('[class="edge"').each(function () {
             $(this)[0].style.pointerEvents = "none"
         })
@@ -366,9 +371,11 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
         $(".edge").off("pointerdown")
         $("#pointerLayer").off("pointerdown")
         $("#pointerLayer").off("pointermove")
+
         $('[class="edge"').each(function () {
             $(this)[0].style.pointerEvents = "none"
         })
+
         let towersLen = towers.length
         // Doesn't allow for towers to be placed over one another
         for (let i = 0; i < towersLen; i++) {
@@ -380,6 +387,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
                 return
             }
         }
+
         towers.push({
             x: posX,
             y: posY,
@@ -397,7 +405,6 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
             firing: false,
             firingInterval: null
         })
-        
     })
 }
 
