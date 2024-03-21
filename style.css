@@ -32,7 +32,6 @@ body {
 #pointerLayer {
     z-index: 4;
     pointer-events: none;
-    touch-action: none;
     position: absolute;
 }
 #transitionScreen {
@@ -64,26 +63,27 @@ button {
     overflow: hidden;
     margin: auto;
 }
-#menuControls {
+.menuButtonsContainer {
   top: 360px;
   left: 0px;
   position: relative;
   width: 100%;
   text-align: center;
 }
-#playButton, #mapsButton, #settingsButton {
+.menuButton {
     width: 200px;
     height: 50px;
     position: relative;
 }
 #mapPreview {
     position: absolute;
-    bottom: 0px;
+    bottom: 10px;
     left: 10px;
     background-color: rgba(0, 247, 255, 0.452);
     color: rgb(161, 241, 255);
     border-style: groove;
     border-color: rgb(161, 241, 255);
+    text-align: center;
 }
 #gameControls, #mapsControls, #settingsControls {
     display: none;
@@ -95,6 +95,11 @@ button {
     position: absolute;
     top: 5px;
     right: 5px;
+    z-index: inherit;
+}
+#fullscreenButton {
+    position: relative;
+    justify-self: center;
     z-index: inherit;
 }
 .gamePanel {

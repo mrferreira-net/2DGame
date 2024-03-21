@@ -49,7 +49,7 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    test() //temporary
+    //test() //temporary
 })
 
 // Loades all images before user can use the program
@@ -96,6 +96,30 @@ function loading () {
     }, 1000)
 }
 
+function fullscreenButton() {
+    let button = $("#fullscreenButton")
+    if (button.html() == "Fullscreen") {
+        $("#screen")[0].requestFullscreen()
+        button.html("Exit Fullscreen")
+
+        container.style.position = "absolute"
+        container.style.top = "50%"
+        container.style.left = "50%"
+        container.style.marginTop = "-270px"
+        container.style.marginLeft = "-480px"
+    }
+    else if (button.html() == "Exit Fullscreen") {
+        document.exitFullscreen()
+        button.html("Fullscreen")
+
+        container.style.position = "relative"
+        container.style.top = "0"
+        container.style.left = "0"
+        container.style.marginTop = "auto"
+        container.style.marginLeft = "auto"
+    }
+}
+
 // executes when play button is pressed
 let paths = [],
     towers = [],
@@ -107,6 +131,108 @@ function play() {
         screenTransition("AsteroidDefense")
         loadAsteroid()
     }   
+}
+
+// Loads path data from Game Data files
+function loadPaths (data) {
+    let dataLen = data.length,
+        i = 0
+    while (i < dataLen) {
+        if (data[i] == "[") {
+            let coordinateCount = 0,
+                xData = 0,
+                yData = 0,
+                firstCoordinate = true
+            paths.push([])
+            while (data[i] != "]" && i < dataLen) {
+                if (data[i] == "{") {
+                    if (coordinateCount == pathSmoothingIndex || firstCoordinate) {
+                        coordinateCount = 0
+                        let lastCoordinate = {
+                            x: xData,
+                            y: yData
+                        }
+                        xData = 0
+                        yData = 0
+                        while (data[i] != "}" && i < dataLen) {
+                            if (data[i] == "x") {
+                                while (data[i] != ":" && i < dataLen)
+                                    i++
+                                i++
+                                while (data[i] != "," && i < dataLen) {
+                                    xData = xData + data[i]
+                                    i++
+                                }
+                                xData = Number(xData)
+                            }
+                            else if (data[i] == "y") {
+                                while (data[i] != ":" && i < dataLen)
+                                    i++
+                                i++
+                                while (data[i] != "}" && i < dataLen) {
+                                    yData = yData + data[i]
+                                    i++
+                                }
+                                yData = Number(yData)
+                            }
+                            else
+                                i++
+                        }
+                    
+                        if (firstCoordinate == false) {
+                            let dy = yData - lastCoordinate.y,
+                                dx = xData - lastCoordinate.x
+                                radian = Math.atan(dy / dx),
+                                hypotenuse = Math.sqrt((dy ** 2) + (dx ** 2)) / pathSmoothingIndex
+
+                            if (Math.sign(dx) == -1)
+                                radian = radian + pi
+
+                            for (let i = 1; i <= pathSmoothingIndex; i++) {
+                                paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), baseX: xData
+                                , baseY: yData, x: 0, y: 0})
+                            } 
+                        } 
+                        firstCoordinate = false
+                        coordinateCount++
+                    }
+                    else
+                        coordinateCount++
+                    i++
+                }
+                else
+                    i++
+            }
+        }
+        else
+            i++
+    }
+
+    for (let i = 0; i < paths.length; i++) {
+        let pathLen = paths[i].length
+        for (let j = 1; j < pathLen - 1; j++) {
+            if (i == 6 && j ==1402){
+                let h = 0
+            }
+            let ri = paths[i][j].r,
+                rf = paths[i][j+1].r,
+                xi = paths[i][j].baseX,
+                xf = paths[i][j+1].baseX,
+                yi = paths[i][j].baseY,
+                yf = paths[i][j+1].baseY
+            if ((rf - ri) != 0 || (yf - yi) != 0 || (xf - xi) != 0) {
+                let dr = (rf - ri) / pathSmoothingIndex,
+                    dx = (xf - xi) / pathSmoothingIndex,
+                    dy = (yf - yi) / pathSmoothingIndex
+
+                for (let k = 0; k < pathSmoothingIndex; k++) {
+                    paths[i][j - k].r = ri + (dr * (pathSmoothingIndex - k - 1))
+                    paths[i][j - k].x = xi + (dx * (pathSmoothingIndex - k - 1)) 
+                    paths[i][j - k].y = yi + (dy * (pathSmoothingIndex - k - 1)) 
+                }   
+            }
+        }
+    }
 }
 
 // test function that runs game
@@ -321,11 +447,9 @@ let position,
     posY
 function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
     pointerLayer.style.pointerEvents = "auto"
-    pointerLayer.style.touchAction = "auto"
     $('[class="edge"').each(function () {
         $(this)[0].style.backgroundColor = "rgba(0, 255, 149, 0.315)"
         $(this)[0].style.pointerEvents = "auto"
-        $(this)[0].style.touchAction = "auto"
     })
     // Animates tower placement preview
     function animate (evt) {
@@ -345,8 +469,35 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
     }
     animate(evt)
 
+    function removeEvents () {
+        $(".edge").off("pointerup")
+        $(".edge").off("pointerdown")
+        $("#pointerLayer").off("pointerdown")
+        $("#pointerLayer").off("pointermove")
+
+        $('[class="edge"').each(function () {
+            $(this)[0].style.pointerEvents = "none"
+        })
+    }
     
-    function edgePointerUp () {
+    $("#pointerLayer").on("pointermove", function (evt) {
+        animate(evt)
+    })
+    $("#pointerLayer").on("pointerdown", function () {
+        pointerLayer.style.pointerEvents = "none"
+
+        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+        
+        $('[class="edge"').each(function () {
+            $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
+        })
+    })
+    $(".edge").on("pointerdown", function () {
+        removeEvents()
+    })
+    $(".edge").on("pointerup", function () {
+        removeEvents()
+
         let towersLen = towers.length
         // Doesn't allow for towers to be placed over one another
         for (let i = 0; i < towersLen; i++) {
@@ -376,66 +527,6 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
             firing: false,
             firingInterval: null
         })
-    }
-
-    function layerPointerDown () {
-        pointerLayer.style.pointerEvents = "none"
-        pointerLayer.style.touchAction = "none"
-
-        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
-        
-        $('[class="edge"').each(function () {
-            $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
-        })
-    }
-
-    function removeEvents () {
-        $(".edge").off("mouseup")
-        $(".edge").off("mousedown")
-        $("#pointerLayer").off("mousedown")
-        $("#pointerLayer").off("mousemove")
-
-        $(".edge").off("touchend")
-        $(".edge").off("touchstart")
-        $("#pointerLayer").off("touchstart")
-        $("#pointerLayer").off("touchmove")
-
-        $('[class="edge"').each(function () {
-            $(this)[0].style.pointerEvents = "none"
-            $(this)[0].style.touchAction = "none"
-        })
-    }
-
-    $("#pointerLayer").on("mousemove", function (evt) {
-        animate(evt)
-    })
-    $("#pointerLayer").on("mousedown", function (evt) {
-        layerPointerDown()
-    })
-    $(".edge").on("mousedown", function (evt) {
-        removeEvents()
-    })
-    $(".edge").on("mouseup", function (evt) {
-        removeEvents()
-        edgePointerUp()
-    })
-
-    $("#pointerLayer").on("touchmove", function (evt) {
-        animate(evt)
-        evt.preventDefault()
-    })
-    $("#pointerLayer").on("touchstart", function (evt) {
-        layerPointerDown()
-        evt.preventDefault()
-    })
-    $(".edge").on("touchstart", function (evt) {
-        removeEvents()
-        evt.preventDefault()
-    })
-    $(".edge").on("touchend", function (evt) {
-        removeEvents()
-        edgePointerUp()
-        evt.preventDefault()
     })
 }
 
@@ -594,105 +685,7 @@ function loadAsteroid () {
     }, 1000)
     // Load Paths
     $.get('Assets/GameData/AsteroidDefensePaths.txt', function(data) {
-        let dataLen = data.length,
-            i = 0
-        while (i < dataLen) {
-            if (data[i] == "[") {
-                let coordinateCount = 0,
-                    xData = 0,
-                    yData = 0,
-                    firstCoordinate = true
-                paths.push([])
-                while (data[i] != "]" && i < dataLen) {
-                    if (data[i] == "{") {
-                        if (coordinateCount == pathSmoothingIndex || firstCoordinate) {
-                            coordinateCount = 0
-                            let lastCoordinate = {
-                                x: xData,
-                                y: yData
-                            }
-                            xData = 0
-                            yData = 0
-                            while (data[i] != "}" && i < dataLen) {
-                                if (data[i] == "x") {
-                                    while (data[i] != ":" && i < dataLen)
-                                        i++
-                                    i++
-                                    while (data[i] != "," && i < dataLen) {
-                                        xData = xData + data[i]
-                                        i++
-                                    }
-                                    xData = Number(xData)
-                                }
-                                else if (data[i] == "y") {
-                                    while (data[i] != ":" && i < dataLen)
-                                        i++
-                                    i++
-                                    while (data[i] != "}" && i < dataLen) {
-                                        yData = yData + data[i]
-                                        i++
-                                    }
-                                    yData = Number(yData)
-                                }
-                                else
-                                    i++
-                            }
-                        
-                            if (firstCoordinate == false) {
-                                let dy = yData - lastCoordinate.y,
-                                    dx = xData - lastCoordinate.x
-                                    radian = Math.atan(dy / dx),
-                                    hypotenuse = Math.sqrt((dy ** 2) + (dx ** 2)) / pathSmoothingIndex
-    
-                                if (Math.sign(dx) == -1)
-                                    radian = radian + pi
-    
-                                for (let i = 1; i <= pathSmoothingIndex; i++) {
-                                    paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), baseX: xData
-                                    , baseY: yData, x: 0, y: 0})
-                                } 
-                            } 
-                            firstCoordinate = false
-                            coordinateCount++
-                        }
-                        else
-                            coordinateCount++
-                        i++
-                    }
-                    else
-                        i++
-                }
-            }
-            else
-                i++
-        }
-
-        for (let i = 0; i < paths.length; i++) {
-            let pathLen = paths[i].length
-            for (let j = 1; j < pathLen - 1; j++) {
-                if (i == 6 && j ==1402){
-                    let h = 0
-                }
-                let ri = paths[i][j].r,
-                    rf = paths[i][j+1].r,
-                    xi = paths[i][j].baseX,
-                    xf = paths[i][j+1].baseX,
-                    yi = paths[i][j].baseY,
-                    yf = paths[i][j+1].baseY
-                if ((rf - ri) != 0 || (yf - yi) != 0 || (xf - xi) != 0) {
-                    let dr = (rf - ri) / pathSmoothingIndex,
-                        dx = (xf - xi) / pathSmoothingIndex,
-                        dy = (yf - yi) / pathSmoothingIndex
-
-                    for (let k = 0; k < pathSmoothingIndex; k++) {
-                        paths[i][j - k].r = ri + (dr * (pathSmoothingIndex - k - 1))
-                        paths[i][j - k].x = xi + (dx * (pathSmoothingIndex - k - 1)) 
-                        paths[i][j - k].y = yi + (dy * (pathSmoothingIndex - k - 1)) 
-                    }   
-                }
-            }
-        }
-
+        loadPaths(data)
         $("#edgeContainer").load("Assets/GameData/AsteroidDefenseEdges.html", function () {
             pathsLoaded = true
         })

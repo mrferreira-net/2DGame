@@ -32,76 +32,86 @@
             </div>
             
         </div>
-        <div id="container" style="height: 540px; width: 960px;">
-            <div id="loadingScreen">Loading...</div>
 
-            <canvas id="spriteLayer" height="540" width="960"></canvas>
-            <canvas id="towerLayer" height="540" width="960"></canvas>
-            <canvas id="pointerLayer" height="540" width="960"></canvas>
-            <canvas id="projectileLayer" height="540" width="960"></canvas>
-
-            <div id="edgeLayer" style="z-index: 2; width: 100%; height: 100%; position: absolute; pointer-events: none; display: none;"></div>
-            <div id="edgeContainer"></div>
-
-            <menu id="menuControls">
-                <div>
-                    <button id="playButton" style="bottom: 185px;" onclick="play()">Play!</button>
-                </div>
-                <div>
-                    <button id="mapsButton" style="bottom: 180px;" onclick="screenTransition(event)">Maps</button>
-                </div>
-                <div>
-                    <button id="settingsButton" style="bottom: 175px;" onclick="screenTransition(event)">Settings</button>
-                </div>
-                <div class="card" style="width: 200px;" id="mapPreview">
-                    <h5>Current Map</h5>
-                    <img src="Assets/Backgrounds/AsteroidDefense.png" class="card-img-top" alt="mapPreview" id="mapPreviewImage">
-                    <div class="card-body">
-                      <p class="card-text" id="mapPreviewText">Asteroid Defense</p>
-                    </div>
-                </div>
-            </menu>
-
-            <menu id="gameControls">
-                <div style="z-index: inherit; width: 190px; height: 460px; bottom: 2px; right: 2px; background-color: rgba(0, 0, 0, 0.637);
-                position: absolute; border-radius: 10%; border-bottom-left-radius: 0%;"></div>
-                <div style="z-index: inherit; width: 330px; height: 100px; bottom: 2px; right: 192px; background-color: rgba(0, 0, 0, 0.637);
-                position: absolute; border-radius: 10%; border-bottom-right-radius: 0%; border-top-right-radius: 0%;"></div>
-
-                <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
-                <div class="gamePanel">
-                    <div name="towerButton">
-                        <div style="display: flex;">
-                            <button id="missileCannon">
-                                <img src="Assets/Sprites/testsprite1.png" alt="">
-                                Missile Cannon
-                            </button>
+        <div id="screen">
+            <div id="container" style="height: 540px; width: 960px;">
+                <div id="loadingScreen">Loading...</div>
+    
+                <canvas id="spriteLayer" height="540" width="960"></canvas>
+                <canvas id="towerLayer" height="540" width="960"></canvas>
+                <canvas id="pointerLayer" height="540" width="960"></canvas>
+                <canvas id="projectileLayer" height="540" width="960"></canvas>
+    
+                <div id="edgeLayer" style="z-index: 2; width: 100%; height: 100%; position: absolute; pointer-events: none; display: none;"></div>
+                <div id="edgeContainer"></div>
+    
+                <menu id="menuControls">
+                    <div class="menuButtonsContainer">
+                        <div>
+                            <button id="playButton" class="menuButton" style="bottom: 185px;" onclick="play()">Play!</button>
                         </div>
-                        <img src="Assets/Backgrounds/coin.png" style="position: absolute; width: 14px; padding-top: 3px;"> 
-                        <div style="font-size: medium; position: relative; padding-left: 20px;">
-                            500
-                        </div> 
+                        <div>
+                            <button id="mapsButton" class="menuButton" style="bottom: 180px;" onclick="screenTransition(event)">Maps</button>
+                        </div>
+                        <div>
+                            <button id="settingsButton" class="menuButton" style="bottom: 175px;" onclick="screenTransition(event)">Settings</button>
+                        </div>
                     </div>
-                </div>
-            </menu>
 
-            <menu id="mapsControls">
-                <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
-                <div class="card" style="width: 18rem;" id="asteroid">
-                    <img src="" class="card-img-top" alt="...">
-                    <div class="card-body">
-                      <h5 class="card-title">Card title</h5>
-                      <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                      <a href="#" class="btn btn-primary">Go somewhere</a>
+                    <div class="card" style="width: 200px;" id="mapPreview">
+                        <h5>Current Map</h5>
+                        <img src="Assets/Backgrounds/AsteroidDefense.png" class="card-img-top" alt="mapPreview" id="mapPreviewImage">
+                        <div class="card-body">
+                          <p class="card-text" id="mapPreviewText">Asteroid Defense</p>
+                        </div>
                     </div>
-                  </div>
-            </menu>
-
-            <menu id="settingsControls">
-                <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
-            </menu>
+                </menu>
+    
+                <menu id="gameControls">
+                    <div style="z-index: inherit; width: 190px; height: 460px; bottom: 2px; right: 2px; background-color: rgba(0, 0, 0, 0.637);
+                    position: absolute; border-radius: 10%; border-bottom-left-radius: 0%;"></div>
+                    <div style="z-index: inherit; width: 330px; height: 100px; bottom: 2px; right: 192px; background-color: rgba(0, 0, 0, 0.637);
+                    position: absolute; border-radius: 10%; border-bottom-right-radius: 0%; border-top-right-radius: 0%;"></div>
+    
+                    <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
+                    <div class="gamePanel">
+                        <div name="towerButton">
+                            <div style="display: flex;">
+                                <button id="missileCannon">
+                                    <img src="Assets/Sprites/testsprite1.png" alt="">
+                                    Missile Cannon
+                                </button>
+                            </div>
+                            <img src="Assets/Backgrounds/coin.png" style="position: absolute; width: 14px; padding-top: 3px;"> 
+                            <div style="font-size: medium; position: relative; padding-left: 20px;">
+                                500
+                            </div> 
+                        </div>
+                    </div>
+                </menu>
+    
+                <menu id="mapsControls">
+                    <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
+                    <div class="card" style="width: 18rem;" id="asteroid">
+                        <img src="" class="card-img-top" alt="...">
+                        <div class="card-body">
+                          <h5 class="card-title">Card title</h5>
+                          <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                          <a href="#" class="btn btn-primary">Go somewhere</a>
+                        </div>
+                      </div>
+                </menu>
+    
+                <menu id="settingsControls">
+                    <div class="menuButtonsContainer">
+                        <button id="fullscreenButton" class="menuButton" onclick="fullscreenButton(event)">Fullscreen</button>
+                    </div>
+                    
+                    <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
+                </menu>
+            </div>
         </div>
-
+        
         <div style="color: white;">
             dev buttons:
             <br>
