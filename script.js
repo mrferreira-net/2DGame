@@ -96,8 +96,10 @@ function loading () {
     }, 1000)
 }
 
+// Handles fullscreen mode functionality
 function fullscreenButton() {
-    let button = $("#fullscreenButton")
+    let checkExit,
+        button = $("#fullscreenButton")
     if (button.html() == "Fullscreen") {
         $("#screen")[0].requestFullscreen()
         button.html("Exit Fullscreen")
@@ -107,6 +109,20 @@ function fullscreenButton() {
         container.style.left = "50%"
         container.style.marginTop = "-270px"
         container.style.marginLeft = "-480px"
+
+        checkExit = setInterval(function () {
+            if (document.fullscreenElement == null && button.html() == "Exit Fullscreen") {
+                button.html("Fullscreen")
+        
+                container.style.position = "relative"
+                container.style.top = "0"
+                container.style.left = "0"
+                container.style.marginTop = "auto"
+                container.style.marginLeft = "auto"
+
+                clearInterval(checkExit)
+            }
+        }, 500)
     }
     else if (button.html() == "Exit Fullscreen") {
         document.exitFullscreen()
