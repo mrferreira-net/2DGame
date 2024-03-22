@@ -385,8 +385,8 @@ function createPath () {
 
     spriteLayer.style.pointerEvents = "auto"
     let mouseDown = false
-    $("#spriteLayer").on("pointermove", function (evt) {
-        let position = getMousePos(spriteLayer, evt)
+    $("#spriteLayer").on("pointermove", function (e) {
+        let position = getMousePos(spriteLayer, e)
         if (mouseDown) {
             let lastPositionIndex = createdPath.length - 1
             createdPath.push({
@@ -411,10 +411,18 @@ function createPath () {
 }
 
 // Returns mouse position on canvas
-function getMousePos(canvas, evt) {
+function getMousePos(canvas, e) {
+    let agentX = e.clientX,
+        agentY = e.clientY
+    if (e.type == "touchstart" || e.type == "touchmove" || e.type == "touchend" || e.type == "touchcancel") {
+        let touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0]
+        agentX = touch.pageX
+        agentY = touch.pageY
+    }
+
     var rect = canvas.getBoundingClientRect(),
-        x = (evt.clientX - (rect.left * zoomMod)) / zoomMod, 
-        y = (evt.clientY - (rect.top * zoomMod)) / zoomMod  
+        x = (agentX - (rect.left * zoomMod)) / zoomMod, 
+        y = (agentY - (rect.top * zoomMod)) / zoomMod  
 
     return {
         x: x,   
@@ -508,11 +516,11 @@ let position,
     placeButtons
 $(document).ready(function () {
     placeButtons = $("#mobilePlacement")[0]
-    $("#missileCannon").on("click", function (evt) {
-        placeTower(images.mcannon, 1, 180, 2000, "missile", evt)
+    $("#missileCannon").on("click", function (e) {
+        placeTower(images.mcannon, 1, 180, 2000, "missile", e)
     })
 })
-function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
+function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
     pointerLayer.style.pointerEvents = "auto"
     pointerLayer.style.touchAction = "auto"
     $('[class="edge"').each(function () {
@@ -521,8 +529,8 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
         $(this)[0].style.touchAction = "auto"
     })
     // Animates tower placement preview
-    function animate (evt) {
-        position = getMousePos(pointerLayer, evt)
+    function animate (e) {
+        position = getMousePos(pointerLayer, e)
         posX = position.x - (imageSrc.width * sizeMod / 2)
         posY = position.y - (imageSrc.height * sizeMod / 2)
         pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
@@ -536,7 +544,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
         pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
         pointerContext.restore()
     }
-    animate(evt)
+    animate(e)
 
     function removeEvents () {
         $("#pointerLayer").off("touchmove")
@@ -557,27 +565,27 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
         })
     }
 
-    function touchAction (evt) {
-        animate(evt)
+    function touchAction (e) {
+        animate(e)
         $(".edge").off("pointerup")
         $(".edge").off("pointerdown")
         $("#pointerLayer").off("pointerdown")
         $("#pointerLayer").off("pointermove")
     }
 
-    $("#pointerLayer").on("touchstart", function (evt) {
-        touchAction(evt)
+    $("#pointerLayer").on("touchstart", function (e) {
+        touchAction(e)
     })
-    $("#pointerLayer").on("touchmove", function (evt) {
-        touchAction(evt)
+    $("#pointerLayer").on("touchmove", function (e) {
+        touchAction(e)
     })
-    $("#pointerLayer").on("touchend", function (evt) {
-        touchAction(evt)
+    $("#pointerLayer").on("touchend", function (e) {
+        touchAction(e)
         pointerLayer.style.pointerEvents = "none"
         pointerLayer.style.touchAction = "none"
     })
     $(".edge").on("touchmove", function () {
-        animate(evt)
+        animate(e)
     })
     $(".edge").on("touchend", function () {
         removeEvents()
@@ -621,8 +629,8 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
         removeEvents()
     })
     
-    $("#pointerLayer").on("pointermove", function (evt) {
-        animate(evt)
+    $("#pointerLayer").on("pointermove", function (e) {
+        animate(e)
     })
     $("#pointerLayer").on("pointerdown", function () {
         pointerLayer.style.pointerEvents = "none"
