@@ -627,6 +627,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
 
     $("#void").on("pointerup touchend", function () {
         removeEvents()
+        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
     })
     
     $("#pointerLayer").on("pointermove", function (e) {
