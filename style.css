@@ -32,6 +32,7 @@ body {
 #pointerLayer {
     z-index: 4;
     pointer-events: none;
+    touch-action: none;
     position: absolute;
 }
 #transitionScreen {
@@ -45,6 +46,8 @@ body {
     z-index: 2;
     background-color: rgba(0, 0, 0, 0);
     position: absolute;
+    pointer-events: none;
+    touch-action: none;
 }
 #edgeContainer {
     pointer-events: none;
@@ -138,4 +141,7 @@ a {
     text-align: center;
     font-size: larger;
     display: block;
+}
+#mobilePlacement {
+    display: none;
 }

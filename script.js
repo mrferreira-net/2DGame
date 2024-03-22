@@ -49,7 +49,7 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    //test() //temporary
+    test() //temporary
 })
 
 // Loades all images before user can use the program
@@ -404,6 +404,9 @@ function createPath () {
     })
     $(document).on("pointerup", function () {
         mouseDown = false //BREAK POINT HERE
+        $("#spriteLayer").off("pointermove")
+        $(document).off("pointerdown")
+        $(document).off("pointerup")
     })
 }
 
@@ -499,19 +502,23 @@ function spawnSprites(numOfSprites) {
 }
 
 // handles tower placement, it's animation, and appending tower to towers array
+let position,
+    posX,
+    posY,
+    placeButtons
 $(document).ready(function () {
+    placeButtons = $("#mobilePlacement")[0]
     $("#missileCannon").on("click", function (evt) {
         placeTower(images.mcannon, 1, 180, 2000, "missile", evt)
     })
 })
-let position,
-    posX,
-    posY
 function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
     pointerLayer.style.pointerEvents = "auto"
+    pointerLayer.style.touchAction = "auto"
     $('[class="edge"').each(function () {
         $(this)[0].style.backgroundColor = "rgba(0, 255, 149, 0.315)"
         $(this)[0].style.pointerEvents = "auto"
+        $(this)[0].style.touchAction = "auto"
     })
     // Animates tower placement preview
     function animate (evt) {
@@ -532,30 +539,95 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, evt) {
     animate(evt)
 
     function removeEvents () {
+        $("#pointerLayer").off("touchmove")
+        $("#pointerLayer").off("touchend")
+        $(".edge").off("touchmove")
+        $(".edge").off("touchend")
+
+        $("#pointerLayer").off("pointermove")
+        $("#pointerLayer").off("pointerdown")
+        $(".edge").off("pointerup")
+
+        $("#void").on("pointerup touchend")
+
+        $('[class="edge"').each(function () {
+            $(this)[0].style.pointerEvents = "none"
+            $(this)[0].style.touchAction = "none"
+            $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
+        })
+    }
+
+    function touchAction (evt) {
+        animate(evt)
         $(".edge").off("pointerup")
         $(".edge").off("pointerdown")
         $("#pointerLayer").off("pointerdown")
         $("#pointerLayer").off("pointermove")
-
-        $('[class="edge"').each(function () {
-            $(this)[0].style.pointerEvents = "none"
-        })
     }
+
+    $("#pointerLayer").on("touchstart", function (evt) {
+        touchAction(evt)
+    })
+    $("#pointerLayer").on("touchmove", function (evt) {
+        touchAction(evt)
+    })
+    $("#pointerLayer").on("touchend", function (evt) {
+        touchAction(evt)
+        pointerLayer.style.pointerEvents = "none"
+        pointerLayer.style.touchAction = "none"
+    })
+    $(".edge").on("touchmove", function () {
+        animate(evt)
+    })
+    $(".edge").on("touchend", function () {
+        removeEvents()
+        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+        $('[class="edge"').each(function () {
+            $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
+        })
+
+        let towersLen = towers.length
+        // Doesn't allow for towers to be placed over one another
+        for (let i = 0; i < towersLen; i++) {
+            if ((towers[i].x + (towers[i].width / 2)) >= (posX - (imageSrc.width * sizeMod / 2)) 
+            && (towers[i].x - (towers[i].width / 2)) <= (posX + (imageSrc.width * sizeMod / 2)) 
+            && (towers[i].y + (towers[i].height / 2)) >= (posY - (imageSrc.height * sizeMod / 2)) 
+            && (towers[i].y - (towers[i].height / 2)) <= (posY + (imageSrc.height * sizeMod / 2))) {
+                // Some animation or indicator
+                return
+            }
+        }
+
+        towers.push({
+            x: posX,
+            y: posY,
+            image: imageSrc,
+            width: imageSrc.width * sizeMod,
+            height: imageSrc.height * sizeMod,
+            range: range,
+            id: id,
+            radian: (3 * pi / 2),
+            gTurn: false,
+            direction: 0,
+            sRadian: 0,
+            sIndex: -1,
+            firingSpeed: firingSpeed,
+            firing: false,
+            firingInterval: null
+        })
+    })
+
+    $("#void").on("pointerup touchend", function () {
+        removeEvents()
+    })
     
     $("#pointerLayer").on("pointermove", function (evt) {
         animate(evt)
     })
     $("#pointerLayer").on("pointerdown", function () {
         pointerLayer.style.pointerEvents = "none"
-
+        pointerLayer.style.touchAction = "none"
         pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
-        
-        $('[class="edge"').each(function () {
-            $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
-        })
-    })
-    $(".edge").on("pointerdown", function () {
-        removeEvents()
     })
     $(".edge").on("pointerup", function () {
         removeEvents()
