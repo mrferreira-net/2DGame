@@ -97,9 +97,47 @@ function loading () {
 }
 
 // Handles fullscreen mode functionality
+let zoomMod = 1 // value for how much the screen has scaled up or down
+$(document).ready(function () {
+    $(window).on("orientationchange", function() {
+        if (document.fullscreenElement != null) {
+            let width = window.screen.width,
+                height = window.screen.height,
+                dw = width - 960,
+                dh = height - 540
+
+            if (dw < dh) 
+                zoom = width / 960
+            else if (dh < dw) 
+                zoom = height / 540
+            zoom = zoom.toString()
+
+            container.style.position = "absolute"
+            container.style.top = "50%"
+            container.style.left = "50%"
+            container.style.marginTop = "-270px"
+            container.style.marginLeft = "-480px"
+            container.style.border = "none"
+            container.style.zoom = zoom
+            zoomMod = Number(zoom)
+        }
+    })
+})
 function fullscreenButton() {
     let checkExit,
-        button = $("#fullscreenButton")
+        button = $("#fullscreenButton"),
+        width = window.screen.width,
+        height = window.screen.height,
+        dw = width - 960,
+        dh = height - 540
+
+    if (dw < dh) 
+        zoom = width / 960
+    else if (dh < dw) 
+        zoom = height / 540
+    zoom = zoom.toString()
+    
+
     if (button.html() == "Fullscreen") {
         $("#screen")[0].requestFullscreen()
         button.html("Exit Fullscreen")
@@ -109,31 +147,38 @@ function fullscreenButton() {
         container.style.left = "50%"
         container.style.marginTop = "-270px"
         container.style.marginLeft = "-480px"
+        container.style.border = "none"
+        container.style.zoom = zoom
+        zoomMod = Number(zoom)
 
         checkExit = setInterval(function () {
             if (document.fullscreenElement == null && button.html() == "Exit Fullscreen") {
                 button.html("Fullscreen")
-        
+                clearInterval(checkExit)
                 container.style.position = "relative"
                 container.style.top = "0"
                 container.style.left = "0"
                 container.style.marginTop = "auto"
                 container.style.marginLeft = "auto"
-
-                clearInterval(checkExit)
+                container.style.border = "2px solid rgb(88, 88, 88)"
+                container.style.zoom = "1"
+                zoomMod = 1
             }
         }, 500)
     }
     else if (button.html() == "Exit Fullscreen") {
         document.exitFullscreen()
+
         button.html("Fullscreen")
         clearInterval(checkExit)
-
         container.style.position = "relative"
         container.style.top = "0"
         container.style.left = "0"
         container.style.marginTop = "auto"
         container.style.marginLeft = "auto"
+        container.style.border = "2px solid rgb(88, 88, 88)"
+        container.style.zoom = "1"
+        zoomMod = 1
     }
 }
 
@@ -364,13 +409,13 @@ function createPath () {
 
 // Returns mouse position on canvas
 function getMousePos(canvas, evt) {
-    var rect = canvas.getBoundingClientRect(), // abs. size of element
-      scaleX = canvas.width / rect.width,    // relationship bitmap vs. element for x
-      scaleY = canvas.height / rect.height  // relationship bitmap vs. element for y
-  
+    var rect = canvas.getBoundingClientRect(),
+        x = (evt.clientX - (rect.left * zoomMod)) / zoomMod, 
+        y = (evt.clientY - (rect.top * zoomMod)) / zoomMod  
+
     return {
-      x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
-      y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
+        x: x,   
+        y: y
     }
 }
 
