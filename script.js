@@ -4,8 +4,9 @@ let spawnRate = 1500
 const oneDeg = Math.PI / 180
 const pi = Math.PI
 const twoPi = Math.PI * 2
+const twentyDeg = oneDeg * 20
 const tenDeg = oneDeg * 10
-const fiveDeg = oneDeg * 5
+const fourDeg = oneDeg * 4
 
 // Waits for document to be ready before running JS code
 let spriteLayer,
@@ -49,7 +50,7 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    //test() //temporary
+    test() //temporary
 })
 
 // Loades all images before user can use the program
@@ -463,7 +464,7 @@ function appendSpriteArray (numOfSprites, spriteSpeed, imageSrc, health, sizeMod
 
 // function that spawns sprites in sprite array
 let spawning
-function spawnSprites(numOfSprites) {
+function renderSprites(numOfSprites) {
     let spawned = 0
     spawning = setInterval(function () {
         if (spawned == 0)
@@ -502,8 +503,11 @@ function spawnSprites(numOfSprites) {
                 break
             }
         }
-        if (spriteOnScreen && stopAnimation == false) 
-            requestAnimationFrame(animate)
+        if (spriteOnScreen && stopAnimation == false) {
+            setTimeout(() => {
+                requestAnimationFrame(animate)
+            }, 34)
+        }
         else 
             spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)   
     }
@@ -702,8 +706,8 @@ function renderTowers () {
                 towers[i].sRadian = towers[i].sRadian + twoPi
 
             let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
-            if (dTheta > fiveDeg) {
-                towers[i].radian = towers[i].radian + (towers[i].direction * oneDeg)
+            if (dTheta > tenDeg) {
+                towers[i].radian = towers[i].radian + (towers[i].direction * fourDeg)
                 if (towers[i].radian < 0)
                     towers[i].radian = towers[i].radian + twoPi
                 else if (towers[i].radian > twoPi)
@@ -730,7 +734,7 @@ function renderTowers () {
                         towers[i].sRadian = towers[i].sRadian + twoPi
 
                     let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
-                    if (dTheta > tenDeg) {
+                    if (dTheta > twentyDeg) {
                         towers[i].gTurn = true
                         if (towers[i].radian < towers[i].sRadian) {
                             if (((twoPi - towers[i].sRadian) + towers[i].radian) > dTheta) 
@@ -764,8 +768,12 @@ function renderTowers () {
         towerContext.drawImage(towers[i].image, (-towers[i].width / 2), (-towers[i].height / 2), towers[i].width, towers[i].height)
         towerContext.restore()
     }
-    if (stopAnimation == false)
-        requestAnimationFrame(renderTowers)
+    if (stopAnimation == false) {
+        setTimeout(() => {
+            requestAnimationFrame(renderTowers)
+        }, 34)
+    }
+        
 }
 
 // appends projectile object to the projectiles array
@@ -774,7 +782,7 @@ function appendProjectile (towerIndex) {
         speed
     if (towers[towerIndex].id == "missile") {
         imageSrc = images.missile
-        speed = 0.4
+        speed = 2.1
     }
     projectiles.push({
         sIndex: towers[towerIndex].sIndex,
@@ -795,6 +803,19 @@ function renderProjectiles() {
             sy = sprites[projectiles[i].sIndex].y,
             px = projectiles[i].x,
             py = projectiles[i].y
+            dx = sx - px,
+            dy = sy - py,
+            radian = Math.atan(dy / dx)
+        if (Math.sign(dx) == -1)
+            radian = radian + pi
+        if (radian < 0)
+            radian = radian + twoPi
+
+        projectileContext.save()
+        projectileContext.translate(px, py)
+        projectileContext.rotate(radian)
+        projectileContext.drawImage(projectiles[i].image, 0, 0)
+        projectileContext.restore()
 
         if (px < sx) 
             projectiles[i].x = px + projectiles[i].speed
@@ -806,12 +827,20 @@ function renderProjectiles() {
         else if (py > sy)
             projectiles[i].y = py - projectiles[i].speed
 
-        
-        
-        projectileContext.drawImage(projectiles[i].image, projectiles[i].x, projectiles[i].y)
+        if ((sx + (sprites[projectiles[i].sIndex].width)) >= (px - (projectiles[i].width)) 
+        && (sx - (sprites[projectiles[i].sIndex].width)) <= (px + (projectiles[i].width)) 
+        && (sy + (sprites[projectiles[i].sIndex].height)) >= (py - (projectiles[i].height)) 
+        && (sy - (sprites[projectiles[i].sIndex].height)) <= (py + (projectiles[i].height))) {
+            projectiles.splice(i, 1)
+        }
+
     }
-    if (stopAnimation == false)
-        requestAnimationFrame(renderProjectiles)
+    if (stopAnimation == false) {
+        setTimeout(() => {
+            requestAnimationFrame(renderProjectiles)
+        }, 34)
+    }
+        
 }
 
 // Waits to load the Asteroid defense map data before firing any code.
@@ -838,8 +867,8 @@ function loadAsteroid () {
 // Begins Asteroid defense sprite spawning.
 let checkFiring
 function runAsteroid() {
-    appendSpriteArray(1, 0.25, images.drone, 100, 1.2)
-    spawnSprites(sprites.length)
+    appendSpriteArray(1, 2, images.drone, 100, 1.2)
+    renderSprites(sprites.length)
     edgeLayer.style.display = "block"
     edgeLayer.style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"
     
@@ -856,7 +885,7 @@ function runAsteroid() {
                 towers[i].firingInterval = null
             }
         }
-    }, 50)
+    }, 1000)
     renderTowers()
     renderProjectiles()
 }
