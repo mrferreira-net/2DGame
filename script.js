@@ -411,6 +411,18 @@ function createPath () {
     })
 }
 
+// Deals with javascript radian weirdness
+function getRadian (dx, dy) {
+    let radian = Math.atan(dy / dx)
+    if (Math.sign(dx) == -1)
+        radian = radian + pi
+    if (radian < 0)
+        radian = radian + twoPi
+    if (isNaN(radian))
+        radian = 0
+    return radian
+}
+
 // Returns mouse position on canvas
 function getMousePos(canvas, e) {
     let agentX = e.clientX,
@@ -699,11 +711,7 @@ function renderTowers () {
         function gentleTurn () {
             let dx = sprites[towers[i].sIndex].x - (towers[i].x + (towers[i].width / 2)),
                 dy = sprites[towers[i].sIndex].y - (towers[i].y + (towers[i].height / 2))
-            towers[i].sRadian = Math.atan(dy / dx)
-            if (Math.sign(dx) == -1)
-                towers[i].sRadian = towers[i].sRadian + pi
-            if (towers[i].sRadian < 0)
-                towers[i].sRadian = towers[i].sRadian + twoPi
+            towers[i].sRadian = getRadian(dx, dy)
 
             let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
             if (dTheta > tenDeg) {
@@ -727,12 +735,7 @@ function renderTowers () {
                     hypotenuse = Math.sqrt((dx ** 2) + (dy ** 2))
                 towers[i].sIndex = j
                 if (hypotenuse <= towers[i].range) {
-                    towers[i].sRadian = Math.atan(dy / dx)
-                    if (Math.sign(dx) == -1)
-                        towers[i].sRadian = towers[i].sRadian + pi
-                    if (towers[i].sRadian < 0)
-                        towers[i].sRadian = towers[i].sRadian + twoPi
-
+                    towers[i].sRadian = getRadian(dx, dy)
                     let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
                     if (dTheta > twentyDeg) {
                         towers[i].gTurn = true
@@ -758,7 +761,7 @@ function renderTowers () {
                     }
                     break
                 }
-                else
+                else if (j == spritesLen - 1)
                     towers[i].firing = false
             }
         }
@@ -779,16 +782,21 @@ function renderTowers () {
 // appends projectile object to the projectiles array
 function appendProjectile (towerIndex) {
     let imageSrc,
-        speed
+        speed,
+        sizeMod
     if (towers[towerIndex].id == "missile") {
         imageSrc = images.missile
-        speed = 2.1
+        speed = 3
+        sizeMod = 1
     }
+
     projectiles.push({
         sIndex: towers[towerIndex].sIndex,
         x: towers[towerIndex].x + (towers[towerIndex].width / 2),
         y: towers[towerIndex].y + (towers[towerIndex].height / 2),
         image: imageSrc,
+        height: imageSrc.height * sizeMod,
+        width: imageSrc.width * sizeMod,
         speed: speed,
         radian: towers[towerIndex].radian
     })
@@ -805,11 +813,7 @@ function renderProjectiles() {
             py = projectiles[i].y
             dx = sx - px,
             dy = sy - py,
-            radian = Math.atan(dy / dx)
-        if (Math.sign(dx) == -1)
-            radian = radian + pi
-        if (radian < 0)
-            radian = radian + twoPi
+            radian = getRadian(dx, dy)
 
         projectileContext.save()
         projectileContext.translate(px, py)
@@ -817,23 +821,19 @@ function renderProjectiles() {
         projectileContext.drawImage(projectiles[i].image, 0, 0)
         projectileContext.restore()
 
-        if (px < sx) 
-            projectiles[i].x = px + projectiles[i].speed
-        else if (px > sx)
-            projectiles[i].x = px - projectiles[i].speed
+        let xTheta = Math.cos(radian) * projectiles[i].speed,
+            yTheta = Math.sin(radian) * projectiles[i].speed
 
-        if (py < sy) 
-            projectiles[i].y = py + projectiles[i].speed
-        else if (py > sy)
-            projectiles[i].y = py - projectiles[i].speed
+        projectiles[i].x = px + xTheta
+        projectiles[i].y = py + yTheta
 
-        if ((sx + (sprites[projectiles[i].sIndex].width)) >= (px - (projectiles[i].width)) 
-        && (sx - (sprites[projectiles[i].sIndex].width)) <= (px + (projectiles[i].width)) 
-        && (sy + (sprites[projectiles[i].sIndex].height)) >= (py - (projectiles[i].height)) 
-        && (sy - (sprites[projectiles[i].sIndex].height)) <= (py + (projectiles[i].height))) {
+        dx = Math.abs(dx)
+        dy = Math.abs(dy)
+        if ((dx < projectiles[i].width && dy < projectiles[i].height) || (sx == 0 && sy == 0)) {
             projectiles.splice(i, 1)
+            projectilesLen--
+            i--
         }
-
     }
     if (stopAnimation == false) {
         setTimeout(() => {
@@ -867,7 +867,7 @@ function loadAsteroid () {
 // Begins Asteroid defense sprite spawning.
 let checkFiring
 function runAsteroid() {
-    appendSpriteArray(1, 2, images.drone, 100, 1.2)
+    appendSpriteArray(10, 2, images.drone, 100, 1.2)
     renderSprites(sprites.length)
     edgeLayer.style.display = "block"
     edgeLayer.style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"
