@@ -50,7 +50,7 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    test() //temporary
+    //test() //temporary
 })
 
 // Loades all images before user can use the program
