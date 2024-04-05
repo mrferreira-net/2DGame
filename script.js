@@ -1,6 +1,3 @@
-let pathSmoothingIndex = 12
-let spawnRate = 1500
-
 const oneDeg = Math.PI / 180
 const pi = Math.PI
 const twoPi = Math.PI * 2
@@ -9,20 +6,8 @@ const tenDeg = oneDeg * 10
 const fourDeg = oneDeg * 4
 
 // Waits for document to be ready before running JS code
-let spriteLayer,
-    spriteContext,
-    towerLayer,
-    towerContext,
-    pointerLayer,
-    pointerContext,
-    projectileLayer,
-    projectileContext,
-    edgeLayer,
-    container,
-    gameControls,
-    mapsControls,
-    settingsControls,
-    menuControls,
+let spriteLayer, spriteContext, towerLayer, towerContext, pointerLayer, pointerContext, projectileLayer,
+    projectileContext, edgeLayer, container, gameControls, mapsControls, settingsControls, menuControls,
     loadingScreen
 $(document).ready(function () {
     spriteLayer = $('#spriteLayer')[0]
@@ -50,7 +35,7 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    //test() //temporary
+    test() //temporary
 })
 
 // Loades all images before user can use the program
@@ -197,6 +182,7 @@ function play() {
 }
 
 // Loads path data from Game Data files
+let pathSmoothingIndex = 15
 function loadPaths (data) {
     let dataLen = data.length,
         i = 0
@@ -244,18 +230,28 @@ function loadPaths (data) {
                     
                         if (firstCoordinate == false) {
                             let dy = yData - lastCoordinate.y,
-                                dx = xData - lastCoordinate.x
-                                radian = Math.atan(dy / dx),
-                                hypotenuse = Math.sqrt((dy ** 2) + (dx ** 2)) / pathSmoothingIndex
-
+                                dx = xData - lastCoordinate.x,
+                                radian = Math.atan(dy / dx)
                             if (Math.sign(dx) == -1)
                                 radian = radian + pi
 
                             for (let i = 1; i <= pathSmoothingIndex; i++) {
-                                paths[paths.length - 1].push({r: radian, h: (hypotenuse * i), baseX: xData
-                                , baseY: yData, x: 0, y: 0})
+                                paths[paths.length - 1].push({
+                                    r: radian, 
+                                    x: xData, 
+                                    y: yData, 
+                                })
                             } 
-                        } 
+                        }
+                        else {
+                            for (let i = 1; i <= pathSmoothingIndex; i++) {
+                                paths[paths.length - 1].push({
+                                    r: 0, 
+                                    x: xData,
+                                    y: yData, 
+                                })
+                            } 
+                        }
                         firstCoordinate = false
                         coordinateCount++
                     }
@@ -271,22 +267,21 @@ function loadPaths (data) {
             i++
     }
 
-    for (let i = 0; i < paths.length; i++) {
-        let pathLen = paths[i].length
+    let pathsLen = paths.length
+    for (let i = 0; i < pathsLen; i++) {
+        let pathLen = paths[i].length,
+            dr, dx, dy
         for (let j = 1; j < pathLen - 1; j++) {
-            if (i == 6 && j ==1402){
-                let h = 0
-            }
             let ri = paths[i][j].r,
                 rf = paths[i][j+1].r,
-                xi = paths[i][j].baseX,
-                xf = paths[i][j+1].baseX,
-                yi = paths[i][j].baseY,
-                yf = paths[i][j+1].baseY
+                xi = paths[i][j].x,
+                xf = paths[i][j+1].x,
+                yi = paths[i][j].y,
+                yf = paths[i][j+1].y
             if ((rf - ri) != 0 || (yf - yi) != 0 || (xf - xi) != 0) {
-                let dr = (rf - ri) / pathSmoothingIndex,
-                    dx = (xf - xi) / pathSmoothingIndex,
-                    dy = (yf - yi) / pathSmoothingIndex
+                dr = (rf - ri) / pathSmoothingIndex
+                dx = (xf - xi) / pathSmoothingIndex
+                dy = (yf - yi) / pathSmoothingIndex
 
                 for (let k = 0; k < pathSmoothingIndex; k++) {
                     paths[i][j - k].r = ri + (dr * (pathSmoothingIndex - k - 1))
@@ -294,6 +289,13 @@ function loadPaths (data) {
                     paths[i][j - k].y = yi + (dy * (pathSmoothingIndex - k - 1)) 
                 }   
             }
+        }
+        let mod = 1
+        for (let j = pathLen + 1 - pathSmoothingIndex; j < pathLen; j++) {
+            paths[i][j].r = paths[i][j].r + (dr * mod)
+            paths[i][j].x = paths[i][j].x + (dx * mod)
+            paths[i][j].y = paths[i][j].y + (dy * mod)
+            mod++
         }
     }
 }
@@ -491,21 +493,19 @@ function renderSprites(numOfSprites) {
         spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
         for (let i = 0; i < spawned; i++) {
             let roundedIndex = Math.round(sprites[i].index)
-
-            if (roundedIndex >= paths[sprites[i].path].length - 1) 
+            if (roundedIndex > paths[sprites[i].path].length - 1) 
                 continue
-
-            if (sprites[i].index < paths[sprites[i].path].length - 1) 
-                sprites[i].index = sprites[i].index + sprites[i].speed
-            
+            if (sprites[i].hp <= 0) 
+                continue
+                
             spriteContext.save()
-            spriteContext.translate(paths[sprites[i].path][roundedIndex].baseX, paths[sprites[i].path][roundedIndex].baseY)
+            spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
             spriteContext.rotate(paths[sprites[i].path][roundedIndex].r)
-            spriteContext.drawImage(sprites[i].image, ((-sprites[i].width / 2) + paths[sprites[i].path][roundedIndex].h), 
-            (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
+            spriteContext.drawImage(sprites[i].image, (-sprites[i].width / 2), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
             spriteContext.restore()
             sprites[i].x = paths[sprites[i].path][roundedIndex].x
             sprites[i].y = paths[sprites[i].path][roundedIndex].y
+            sprites[i].index = sprites[i].index + sprites[i].speed
         }
 
         let spriteOnScreen = false
@@ -526,10 +526,7 @@ function renderSprites(numOfSprites) {
 }
 
 // handles tower placement, it's animation, and appending tower to towers array
-let position,
-    posX,
-    posY,
-    placeButtons
+let position, posX, posY, placeButtons
 $(document).ready(function () {
     placeButtons = $("#mobilePlacement")[0]
     $("#missileCannon").on("click", function (e) {
@@ -681,7 +678,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
             gTurn: false,
             direction: 0,
             sRadian: 0,
-            sIndex: -1,
+            sIndex: null,
             firingSpeed: firingSpeed,
             firing: false,
             firingInterval: null
@@ -730,6 +727,8 @@ function renderTowers () {
         else {
             spritesLen = sprites.length
             for (let j = 0; j < spritesLen; j++) {
+                if (sprites[j].hp <= 0)
+                    continue
                 let dx = sprites[j].x - (towers[i].x + (towers[i].width / 2)),
                     dy = sprites[j].y - (towers[i].y + (towers[i].height / 2)),
                     hypotenuse = Math.sqrt((dx ** 2) + (dy ** 2))
@@ -781,24 +780,25 @@ function renderTowers () {
 
 // appends projectile object to the projectiles array
 function appendProjectile (towerIndex) {
-    let imageSrc,
-        speed,
-        sizeMod
+    let imageSrc, speed, sizeMod, dmg
     if (towers[towerIndex].id == "missile") {
         imageSrc = images.missile
-        speed = 3
+        speed = 4
         sizeMod = 1
+        dmg = 50
     }
-
     projectiles.push({
         sIndex: towers[towerIndex].sIndex,
+        tIndex: towerIndex,
         x: towers[towerIndex].x + (towers[towerIndex].width / 2),
         y: towers[towerIndex].y + (towers[towerIndex].height / 2),
         image: imageSrc,
         height: imageSrc.height * sizeMod,
         width: imageSrc.width * sizeMod,
         speed: speed,
-        radian: towers[towerIndex].radian
+        radian: towers[towerIndex].radian,
+        dmg: dmg,
+        target: true
     })
 }
 
@@ -807,18 +807,36 @@ function renderProjectiles() {
     let projectilesLen = projectiles.length
     projectileContext.clearRect(0, 0, projectileLayer.width, projectileLayer.height)
     for (let i = 0; i < projectilesLen; i++) {
-        let sx = sprites[projectiles[i].sIndex].x,
-            sy = sprites[projectiles[i].sIndex].y,
-            px = projectiles[i].x,
-            py = projectiles[i].y
+        let px = projectiles[i].x,
+            py = projectiles[i].y,
+            spriteIndex = projectiles[i].sIndex,
+            sx = sprites[spriteIndex].x,
+            sy = sprites[spriteIndex].y,
             dx = sx - px,
             dy = sy - py,
             radian = getRadian(dx, dy)
 
+        if (projectiles[i].target == false) {
+            projectileContext.save()
+            projectileContext.translate(px, py)
+            projectileContext.rotate(projectiles[i].radian)
+            projectileContext.drawImage(projectiles[i].image, (-projectiles[i].width / 2), (-projectiles[i].height / 2), 
+                                        projectiles[i].width, projectiles[i].height)
+            projectileContext.restore()
+
+            let xTheta = Math.cos(projectiles[i].radian) * projectiles[i].speed,
+                yTheta = Math.sin(projectiles[i].radian) * projectiles[i].speed
+
+            projectiles[i].x = px + xTheta
+            projectiles[i].y = py + yTheta
+            continue
+        }
+
         projectileContext.save()
         projectileContext.translate(px, py)
         projectileContext.rotate(radian)
-        projectileContext.drawImage(projectiles[i].image, 0, 0)
+        projectileContext.drawImage(projectiles[i].image, (-projectiles[i].width / 2), (-projectiles[i].height / 2), 
+                                    projectiles[i].width, projectiles[i].height)
         projectileContext.restore()
 
         let xTheta = Math.cos(radian) * projectiles[i].speed,
@@ -826,10 +844,32 @@ function renderProjectiles() {
 
         projectiles[i].x = px + xTheta
         projectiles[i].y = py + yTheta
+        projectiles[i].radian = radian
 
         dx = Math.abs(dx)
         dy = Math.abs(dy)
-        if ((dx < projectiles[i].width && dy < projectiles[i].height) || (sx == 0 && sy == 0)) {
+        if ((dx < projectiles[i].width && dy < projectiles[i].height)) {
+            sprites[spriteIndex].hp = sprites[spriteIndex].hp - projectiles[i].dmg
+            projectiles.splice(i, 1)
+            projectilesLen--
+            if (i > 0)
+                i--
+            if (sprites[spriteIndex].hp <= 0) {
+                for (let j = 0; j < projectilesLen; j++) {
+                    if (projectiles[j].sIndex == spriteIndex) 
+                        projectiles[j].target = false
+                }
+                let towersLen = towers.length
+                for (let j = 0; j < towersLen; j++) {
+                    if (towers[j].sIndex == spriteIndex) {
+                        towers[j].firing = false
+                        clearInterval(towers[j].firingInterval)
+                        towers[j].firingInterval = null
+                    }
+                }
+            }
+        }
+        else if (projectiles[i].x > 960 || projectiles[i].y > 540) {
             projectiles.splice(i, 1)
             projectilesLen--
             i--
@@ -865,9 +905,10 @@ function loadAsteroid () {
 }
 
 // Begins Asteroid defense sprite spawning.
-let checkFiring
+let checkFiring,
+    spawnRate = 1000
 function runAsteroid() {
-    appendSpriteArray(10, 2, images.drone, 100, 1.2)
+    appendSpriteArray(1000, 3, images.drone, 100, 1.2)
     renderSprites(sprites.length)
     edgeLayer.style.display = "block"
     edgeLayer.style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"

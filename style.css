@@ -20,17 +20,22 @@ body {
     width: 50px;
 }
 #spriteLayer {
-    z-index: 1;
+    z-index: 2;
     pointer-events: none;
     position: absolute;
 }
-#towerLayer, #projectileLayer {
-    z-index: 3;
+#towerLayer {
+    z-index: 4;
+    pointer-events: none;
+    position: absolute;
+}
+#projectileLayer {
+    z-index: 4;
     pointer-events: none;
     position: absolute;
 }
 #pointerLayer {
-    z-index: 4;
+    z-index: 5;
     pointer-events: none;
     touch-action: none;
     position: absolute;
@@ -40,10 +45,10 @@ body {
     bottom: 0;
     left: 0;
     opacity: 0%;
-    z-index: 0;
+    z-index: 1;
 }
 .edge {
-    z-index: 2;
+    z-index: 3;
     background-color: rgba(0, 0, 0, 0);
     position: absolute;
     pointer-events: none;
@@ -92,7 +97,7 @@ button {
     display: none;
 }
 #gameControls {
-    z-index: 3;
+    z-index: 4;
 }
 #backToMenu {
     position: absolute;
@@ -110,7 +115,7 @@ button {
     color: white;
     bottom: 20px;
     right: 10px;
-    z-index: 3;
+    z-index: 4;
     font-size: 15px;
 }
 #asteroid {
@@ -134,7 +139,7 @@ a {
 #loadingScreen {
     position: absolute;
     background-color: rgb(78, 78, 78);
-    z-index: 5;
+    z-index: 6;
     width: 100%;
     height: 100%;
     color: white;
