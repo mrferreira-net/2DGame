@@ -112,8 +112,8 @@ $(document).ready(function () {
 function fullscreenButton() {
     let checkExit,
         button = $("#fullscreenButton"),
-        width = window.screen.width,
-        height = window.screen.height,
+        width = window.screen.width * window.devicePixelRatio,
+        height = window.screen.height * window.devicePixelRatio,
         dw = width - 960,
         dh = height - 540
 
