@@ -5,7 +5,7 @@ const twentyDeg = oneDeg * 20
 const tenDeg = oneDeg * 10
 const fourDeg = oneDeg * 4
 
-// Waits for document to be ready before running JS code
+// Waits for document to be ready before grabbing DOM stuff
 let spriteLayer, spriteContext, towerLayer, towerContext, pointerLayer, pointerContext, projectileLayer,
     projectileContext, edgeLayer, container, gameControls, mapsControls, settingsControls, menuControls,
     loadingScreen
