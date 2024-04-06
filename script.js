@@ -83,8 +83,8 @@ function loading () {
     }, 1000)
 }
 
-// Handles fullscreen mode functionality.
 let zoomMod = 1 // value for how much the screen has scaled up or down.
+// Handles device screen orientation change with fullscreen.
 $(document).ready(function () {
     $(window).on("orientationchange", function() {
         if (document.fullscreenElement != null) {
@@ -122,7 +122,10 @@ $(document).ready(function () {
             break
         body.style.zoom = zoom.toString()
     }
+    zoomMod = Number(zoom)
 })
+
+// Handles fullscreen mode functionality.
 function fullscreenButton() {
     let checkExit,
         button = $("#fullscreenButton"),
