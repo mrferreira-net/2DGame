@@ -89,12 +89,12 @@ $(document).ready(function () {
         if (document.fullscreenElement != null) {
             let width = window.screen.width * window.devicePixelRatio,
                 height = window.screen.height * window.devicePixelRatio,
-                dw = width - 960,
-                dh = height - 540
+                sRatio = width / height,
+                gRatio = 960 / 540
 
-            if (dw < dh) 
+            if (sRatio <= gRatio) 
                 zoom = width / 960
-            else if (dh < dw) 
+            else if (sRatio > gRatio) 
                 zoom = height / 540
             zoom = zoom.toString()
 
@@ -114,14 +114,14 @@ function fullscreenButton() {
         button = $("#fullscreenButton"),
         width = window.screen.width * window.devicePixelRatio,
         height = window.screen.height * window.devicePixelRatio,
-        dw = width - 960,
-        dh = height - 540
+        sRatio = width / height,
+        gRatio = 960 / 540
 
-    if (dw < dh) 
-        zoom = width / 960
-    else if (dh < dw) 
-        zoom = height / 540
-    zoom = zoom.toString()
+        if (sRatio <= gRatio) 
+            zoom = width / 960
+        else if (sRatio > gRatio) 
+            zoom = height / 540
+        zoom = zoom.toString()
     
 
     if (button.html() == "Fullscreen") {
