@@ -8,7 +8,7 @@ const fourDeg = oneDeg * 4
 // Waits for document to be ready before grabbing DOM stuff.
 let spriteLayer, spriteContext, towerLayer, towerContext, pointerLayer, pointerContext, projectileLayer,
     projectileContext, edgeLayer, container, gameControls, mapsControls, settingsControls, menuControls,
-    loadingScreen
+    loadingScreen, body
 $(document).ready(function () {
     spriteLayer = $('#spriteLayer')[0]
     spriteContext = spriteLayer.getContext("2d")
@@ -25,6 +25,7 @@ $(document).ready(function () {
     settingsControls = $('#settingsControls')[0]
     menuControls = $('#menuControls')[0]
     loadingScreen =  $("#loadingScreen")[0]
+    body = $('#body')[0]
 
     spriteContext.imageSmoothingEnabled = false
     spriteContext.lineWidth = 0.1
@@ -90,7 +91,8 @@ $(document).ready(function () {
             let width = window.screen.width,
                 height = window.screen.height,
                 sRatio = width / height,
-                gRatio = 960 / 540
+                gRatio = 960 / 540,
+                zoom
 
             if (sRatio < gRatio) 
                 zoom = width / 960
@@ -108,10 +110,18 @@ $(document).ready(function () {
             container.style.marginTop = "-270px"
             container.style.marginLeft = "-480px"
             container.style.border = "none"
+            body.style.zoom = "1"
             container.style.zoom = zoom
             zoomMod = Number(zoom)
         }
     })
+    let zoom = 1
+    while ((body.scrollHeight > body.clientHeight) || (body.scrollWidth > body.clientWidth)) {
+        zoom = zoom - 0.1
+        if (zoom <= 0)
+            break
+        body.style.zoom = zoom.toString()
+    }
 })
 function fullscreenButton() {
     let checkExit,
@@ -119,7 +129,8 @@ function fullscreenButton() {
         width = window.screen.width,
         height = window.screen.height,
         sRatio = width / height,
-        gRatio = 960 / 540
+        gRatio = 960 / 540,
+        zoom
 
         if (sRatio < gRatio) 
             zoom = width / 960
@@ -142,6 +153,7 @@ function fullscreenButton() {
         container.style.marginTop = "-270px"
         container.style.marginLeft = "-480px"
         container.style.border = "none"
+        body.style.zoom = "1"
         container.style.zoom = zoom
         zoomMod = Number(zoom)
 
