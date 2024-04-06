@@ -5,7 +5,7 @@ const twentyDeg = oneDeg * 20
 const tenDeg = oneDeg * 10
 const fourDeg = oneDeg * 4
 
-// Waits for document to be ready before grabbing DOM stuff
+// Waits for document to be ready before grabbing DOM stuff.
 let spriteLayer, spriteContext, towerLayer, towerContext, pointerLayer, pointerContext, projectileLayer,
     projectileContext, edgeLayer, container, gameControls, mapsControls, settingsControls, menuControls,
     loadingScreen
@@ -38,7 +38,7 @@ $(document).ready(function () {
     //test() //temporary
 })
 
-// Loades all images before user can use the program
+// Loads all images into image object before user can use the program.
 let images
 function loading () {
     images = {
@@ -82,8 +82,8 @@ function loading () {
     }, 1000)
 }
 
-// Handles fullscreen mode functionality
-let zoomMod = 1 // value for how much the screen has scaled up or down
+// Handles fullscreen mode functionality.
+let zoomMod = 1 // value for how much the screen has scaled up or down.
 $(document).ready(function () {
     $(window).on("orientationchange", function() {
         if (document.fullscreenElement != null) {
@@ -92,10 +92,14 @@ $(document).ready(function () {
                 sRatio = width / height,
                 gRatio = 960 / 540
 
-            if (sRatio <= gRatio) 
+            if (sRatio < gRatio) 
                 zoom = width / 960
             else if (sRatio > gRatio) 
                 zoom = height / 540
+            else if (sRatio == gRatio) {
+                width = width * window.devicePixelRatio
+                zoom = width / 960
+            }
             zoom = zoom.toString()
 
             container.style.position = "absolute"
@@ -117,10 +121,14 @@ function fullscreenButton() {
         sRatio = width / height,
         gRatio = 960 / 540
 
-        if (sRatio <= gRatio) 
+        if (sRatio < gRatio) 
             zoom = width / 960
         else if (sRatio > gRatio) 
             zoom = height / 540
+        else if (sRatio == gRatio) {
+            width = width * window.devicePixelRatio
+            zoom = width / 960
+        }
         zoom = zoom.toString()
     
 
@@ -168,7 +176,7 @@ function fullscreenButton() {
     }
 }
 
-// executes when play button is pressed
+// executes the selected map when play button is pressed.
 let paths = [],
     towers = [],
     sprites = [],
@@ -181,7 +189,7 @@ function play() {
     }   
 }
 
-// Loads path data from Game Data files
+// Loads sprite path data from Game Data files.
 let pathSmoothingIndex = 15
 function loadPaths (data) {
     let dataLen = data.length,
@@ -300,7 +308,7 @@ function loadPaths (data) {
     }
 }
 
-// test function that runs game
+// test function that runs game.
 function test() {
     reset()
     container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')"
@@ -313,6 +321,7 @@ function test() {
     loadAsteroid()
 }
 
+// Resets game related global variables, HTML elements, and intervals.
 let stopAnimation = false
 function reset () {
     stopAnimation = true
@@ -338,7 +347,7 @@ function reset () {
     projectileContext.clearRect(0, 0, projectileLayer.width, projectileLayer.height)
 }
 
-// Executes screen transitions between menus and the game
+// Modifies visible DOM elements in between the main menu and game.
 function screenTransition(event) {
     let string
     if (event.target == undefined) 
@@ -377,7 +386,7 @@ function screenTransition(event) {
     }
 }
 
-// create path for map creation
+// developement tool for creating sprite path data.
 let createdPath = []
 function createPath () {
     container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')"
@@ -413,7 +422,7 @@ function createPath () {
     })
 }
 
-// Deals with javascript radian weirdness
+// Deals with javascript radian weirdness.
 function getRadian (dx, dy) {
     let radian = Math.atan(dy / dx)
     if (Math.sign(dx) == -1)
@@ -425,7 +434,7 @@ function getRadian (dx, dy) {
     return radian
 }
 
-// Returns mouse position on canvas
+// Returns mouse position on canvas.
 function getMousePos(canvas, e) {
     let agentX = e.clientX,
         agentY = e.clientY
@@ -445,21 +454,20 @@ function getMousePos(canvas, e) {
     }
 }
 
-// Returns a random number between the parameters
+// Returns a random number between the parameters.
 function getRandomNum(min, max) {
     return Math.random() * (max - min) + min;
 }
-
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
 }
 
-// Returns a 50/50 boolean
+// Returns a 50/50 boolean.
 function headsOrTails () {
     return Math.random() < 0.5
 }
 
-// function that appends sprites to sprites array
+// function that appends sprites object to sprites array
 function appendSpriteArray (numOfSprites, spriteSpeed, imageSrc, health, sizeMod) {
     for (let i = 0; i < numOfSprites; i++) {
         sprites.push({
@@ -476,7 +484,7 @@ function appendSpriteArray (numOfSprites, spriteSpeed, imageSrc, health, sizeMod
     }
 }
 
-// function that spawns sprites in sprite array
+// function that spawns sprites in sprite array.
 let spawning
 function renderSprites(numOfSprites) {
     let spawned = 0
@@ -525,7 +533,7 @@ function renderSprites(numOfSprites) {
     }
 }
 
-// handles tower placement, it's animation, and appending tower to towers array
+// handles tower placement, tower placement animation, and appending tower to towers array.
 let position, posX, posY, placeButtons
 $(document).ready(function () {
     placeButtons = $("#mobilePlacement")[0]
@@ -778,7 +786,7 @@ function renderTowers () {
         
 }
 
-// appends projectile object to the projectiles array
+// appends projectile object to the projectiles array.
 function appendProjectile (towerIndex) {
     let imageSrc, speed, sizeMod, dmg
     if (towers[towerIndex].id == "missile") {
@@ -802,7 +810,7 @@ function appendProjectile (towerIndex) {
     })
 }
 
-// Renders projectiles in projectile array
+// Renders projectiles in projectile array.
 function renderProjectiles() {
     let projectilesLen = projectiles.length
     projectileContext.clearRect(0, 0, projectileLayer.width, projectileLayer.height)
