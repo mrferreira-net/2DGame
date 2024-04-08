@@ -110,19 +110,10 @@ $(document).ready(function () {
             container.style.marginTop = "-270px"
             container.style.marginLeft = "-480px"
             container.style.border = "none"
-            body.style.zoom = "1"
             container.style.zoom = zoom
             zoomMod = Number(zoom)
         }
     })
-    let zoom = 1
-    while ((body.scrollHeight > body.clientHeight) || (body.scrollWidth > body.clientWidth)) {
-        zoom = zoom - 0.1
-        if (zoom <= 0)
-            break
-        body.style.zoom = zoom.toString()
-    }
-    zoomMod = Number(zoom)
 })
 
 // Handles fullscreen mode functionality.
@@ -156,7 +147,6 @@ function fullscreenButton() {
         container.style.marginTop = "-270px"
         container.style.marginLeft = "-480px"
         container.style.border = "none"
-        body.style.zoom = "1"
         container.style.zoom = zoom
         zoomMod = Number(zoom)
 
