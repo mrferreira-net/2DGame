@@ -36,7 +36,7 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    //test() //temporary
+    test() //temporary
 })
 
 // Loads all images into image object before user can use the program.
@@ -110,8 +110,22 @@ $(document).ready(function () {
             container.style.marginTop = "-270px"
             container.style.marginLeft = "-480px"
             container.style.border = "none"
-            container.style.zoom = zoom
+            container.style.transform = "scale(" + zoom + ")"
             zoomMod = Number(zoom)
+        }
+    })
+    $(document).on("fullscreenchange", function() {
+        let button = $("#fullscreenButton")
+        if (document.fullscreenElement == null && button.html() == "Exit Fullscreen") {
+            button.html("Fullscreen")
+            container.style.position = "relative"
+            container.style.top = "0"
+            container.style.left = "0"
+            container.style.marginTop = "auto"
+            container.style.marginLeft = "auto"
+            container.style.border = "2px solid rgb(88, 88, 88)"
+            container.style.transform = "scale(1)"
+            zoomMod = 1
         }
     })
 })
@@ -138,37 +152,22 @@ function fullscreenButton() {
     
 
     if (button.html() == "Fullscreen") {
-        $("#screen")[0].requestFullscreen()
         button.html("Exit Fullscreen")
-
+        $("#screen")[0].requestFullscreen()
+        
         container.style.position = "absolute"
         container.style.top = "50%"
         container.style.left = "50%"
         container.style.marginTop = "-270px"
         container.style.marginLeft = "-480px"
         container.style.border = "none"
-        container.style.zoom = zoom
+        container.style.transform = "scale(" + zoom + ")"
         zoomMod = Number(zoom)
-
-        checkExit = setInterval(function () {
-            if (document.fullscreenElement == null && button.html() == "Exit Fullscreen") {
-                button.html("Fullscreen")
-                clearInterval(checkExit)
-                container.style.position = "relative"
-                container.style.top = "0"
-                container.style.left = "0"
-                container.style.marginTop = "auto"
-                container.style.marginLeft = "auto"
-                container.style.border = "2px solid rgb(88, 88, 88)"
-                container.style.zoom = "1"
-                zoomMod = 1
-            }
-        }, 500)
     }
     else if (button.html() == "Exit Fullscreen") {
+        button.html("Fullscreen")
         document.exitFullscreen()
 
-        button.html("Fullscreen")
         clearInterval(checkExit)
         container.style.position = "relative"
         container.style.top = "0"
@@ -176,7 +175,7 @@ function fullscreenButton() {
         container.style.marginTop = "auto"
         container.style.marginLeft = "auto"
         container.style.border = "2px solid rgb(88, 88, 88)"
-        container.style.zoom = "1"
+        container.style.transform = "scale(1)"
         zoomMod = 1
     }
 }
@@ -598,7 +597,6 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
         $("#pointerLayer").off("pointerdown")
         $("#pointerLayer").off("pointermove")
     }
-
     $("#pointerLayer").on("touchstart", function (e) {
         touchAction(e)
     })
@@ -658,6 +656,11 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
     
     $("#pointerLayer").on("pointermove", function (e) {
         animate(e)
+        $("#pointerLayer").off("touchstart")
+        $("#pointerLayer").off("touchmove")
+        $("#pointerLayer").off("touchend")
+        $(".edge").off("touchmove")
+        $(".edge").off("touchend")
     })
     $("#pointerLayer").on("pointerdown", function () {
         pointerLayer.style.pointerEvents = "none"

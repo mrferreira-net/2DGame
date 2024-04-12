@@ -110,10 +110,10 @@ button {
     justify-self: center;
     z-index: inherit;
 }
-.gamePanel {
+#gamePanel {
     position: absolute;
     color: white;
-    bottom: 20px;
+    bottom: 10px;
     right: 10px;
     z-index: 4;
     font-size: 15px;
@@ -149,4 +149,15 @@ a {
 }
 #mobilePlacement {
     display: none;
+}
+.gameButton {
+    display: flex; 
+    position: relative; 
+    max-width: 170px; 
+    min-width: 170px; 
+    max-height: 60px; 
+    min-height: 60px; 
+    text-wrap: nowrap;
+    text-align: left;
+    padding: 2px;
 }

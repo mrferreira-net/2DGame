@@ -70,39 +70,39 @@
                 </menu>
     
                 <menu id="gameControls">
-                    <div style="z-index: inherit; width: 190px; height: 460px; bottom: 2px; right: 2px; background-color: rgba(0, 0, 0, 0.637);
-                    position: absolute; border-radius: 10%; border-bottom-left-radius: 0%;"></div>
-                    <div style="z-index: inherit; width: 330px; height: 100px; bottom: 2px; right: 192px; background-color: rgba(0, 0, 0, 0.637);
-                    position: absolute; border-radius: 10%; border-bottom-right-radius: 0%; border-top-right-radius: 0%;"></div>
+                    <div style="z-index: inherit; width: 190px; height: 460px; bottom: 0px; right: 0px; background-color: rgba(0, 0, 0, 0.637);
+                    position: absolute; border-radius: 10%; border-bottom-left-radius: 0%; border-bottom-right-radius: 0%; border-top-right-radius: 0%;"></div>
+                    <div style="z-index: inherit; width: 330px; height: 100px; bottom: 0px; right: 190px; background-color: rgba(0, 0, 0, 0.637);
+                    position: absolute; border-radius: 10%; border-bottom-right-radius: 0%; border-top-right-radius: 0%; border-bottom-left-radius: 0%;"></div>
                     
     
                     <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
-                    <div class="gamePanel">
-                        <div name="towerButton">
-                            <div style="display: flex; position: relative; max-width: 170px; max-height: 60px; bottom: 5px; text-wrap: nowrap;">
-                                <button id="missileCannon" class="gameButton">
-                                    <img src="Assets/Sprites/testsprite1.png" alt="">
-                                    Missile Cannon     
-                                    <div style="height: 5px;"></div>
-                                    <img src="Assets/Backgrounds/coin.png" style="position: absolute; width: 14px; bottom: 4px; left: 65px;"> 
-                                    <div style="font-size: medium; position: absolute; width: 14px; bottom: 2px; left: 80px; color: white;">
-                                        500
-                                    </div> 
-                                </button>
-                            </div>
+                    <div id="gamePanel">
+                        <button id="missileCannon" class="gameButton" style="bottom: 5px;">
+                            <img src="Assets/Sprites/testsprite1.png" alt="">
 
-                            <div style="display: flex; position: relative; max-width: 170px; max-height: 60px;">
-                                <button id="" class="gameButton">
-                                    <img src="Assets/Sprites/testsprite1.png" alt="">
-                                    Not Applicable
-                                    <div style="height: 5px;"></div>
-                                    <img src="Assets/Backgrounds/coin.png" style="position: absolute; width: 14px; bottom: 4px; left: 65px;"> 
-                                    <div style="font-size: medium; position: absolute; width: 14px; bottom: 2px; left: 80px; color: white;">
-                                        500
-                                    </div> 
-                                </button>
+                            <div style="position: absolute; left: 60px; top: 8px;">
+                                Missile Cannon
                             </div>
-                        </div>
+                                    
+                            <img src="Assets/Backgrounds/coin.png" style="position: absolute; width: 14px; bottom: 4px; left: 65px;"> 
+                            <div style="font-size: medium; position: absolute; width: 14px; bottom: 2px; left: 80px; color: white;">
+                                500
+                            </div> 
+                        </button>
+
+                        <button id="" class="gameButton">
+                            <img src="Assets/Sprites/testsprite1.png" alt="">
+
+                            <div style="position: absolute; left: 60px; top: 8px;">
+                                Not Applicable
+                            </div>
+    
+                            <img src="Assets/Backgrounds/coin.png" style="position: absolute; width: 14px; bottom: 4px; left: 65px;"> 
+                            <div style="font-size: medium; position: absolute; width: 14px; bottom: 2px; left: 80px; color: white;">
+                                500
+                            </div> 
+                        </button>
                     </div>
                 </menu>
     
