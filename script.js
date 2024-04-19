@@ -1,9 +1,19 @@
 const oneDeg = Math.PI / 180
-const pi = Math.PI
-const twoPi = Math.PI * 2
 const twentyDeg = oneDeg * 20
 const tenDeg = oneDeg * 10
 const fourDeg = oneDeg * 4
+const twoDeg = oneDeg * 2
+const pi = Math.PI
+const twoPi = Math.PI * 2
+
+
+const towerStats = {
+    "mcannon": {
+        sizeMod: 1, 
+        range: 180, 
+        firingSpeed: 2000,
+    }
+}
 
 // Waits for document to be ready before grabbing DOM stuff.
 let spriteLayer, spriteContext, towerLayer, towerContext, pointerLayer, pointerContext, projectileLayer,
@@ -43,13 +53,13 @@ $(document).ready(function () {
 let images
 function loading () {
     images = {
-        drone: new Image(),
-        mcannon: new Image(),
-        menace: new Image(),
-        test1: new Image(),
-        test2: new Image(),
-        polygon: new Image(),
-        missile: new Image()
+        "drone": new Image(),
+        "mcannon" : new Image(),
+        "menace": new Image(),
+        "test1": new Image(),
+        "test2": new Image(),
+        "polygon": new Image(),
+        "missile": new Image()
     }
 
     images.drone.src = "Assets/Sprites/drone.png"
@@ -471,81 +481,19 @@ function headsOrTails () {
     return Math.random() < 0.5
 }
 
-// function that appends sprites object to sprites array
-function appendSpriteArray (numOfSprites, spriteSpeed, imageSrc, health, sizeMod) {
-    for (let i = 0; i < numOfSprites; i++) {
-        sprites.push({
-            hp: health, 
-            x: 0,
-            y: 0,
-            speed: spriteSpeed,
-            image: imageSrc,
-            width: imageSrc.width * sizeMod,
-            height: imageSrc.height * sizeMod,
-            path: getRandomInt(paths.length),
-            index: 0,
-        })
-    }
-}
-
-// function that spawns sprites in sprite array.
-let spawning
-function renderSprites(numOfSprites) {
-    let spawned = 0
-    spawning = setInterval(function () {
-        if (spawned == 0)
-            animate()
-        if (spawned < numOfSprites) 
-            spawned++
-        else
-            clearInterval(spawning)
-    }, spawnRate)
-    function animate() {
-        // Clear display
-        spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
-        for (let i = 0; i < spawned; i++) {
-            let roundedIndex = Math.round(sprites[i].index)
-            if (roundedIndex > paths[sprites[i].path].length - 1) 
-                continue
-            if (sprites[i].hp <= 0) 
-                continue
-                
-            spriteContext.save()
-            spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
-            spriteContext.rotate(paths[sprites[i].path][roundedIndex].r)
-            spriteContext.drawImage(sprites[i].image, (-sprites[i].width / 2), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
-            spriteContext.restore()
-            sprites[i].x = paths[sprites[i].path][roundedIndex].x
-            sprites[i].y = paths[sprites[i].path][roundedIndex].y
-            sprites[i].index = sprites[i].index + sprites[i].speed
-        }
-
-        let spriteOnScreen = false
-        for (let i = 0; i < numOfSprites; i++) {
-            if (Math.round(sprites[i].index) < paths[sprites[i].path].length - 1) {
-                spriteOnScreen = true
-                break
-            }
-        }
-        if (spriteOnScreen && stopAnimation == false) {
-            setTimeout(() => {
-                requestAnimationFrame(animate)
-            }, 34)
-        }
-        else 
-            spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)   
-    }
-}
-
-// handles tower placement, tower placement animation, and appending tower to towers array.
-let position, posX, posY, placeButtons
+// handles tower placement and appending tower to towers array.
+let position,
+    pointerActive = false,
+    pointerId
 $(document).ready(function () {
-    placeButtons = $("#mobilePlacement")[0]
-    $("#missileCannon").on("click", function (e) {
-        placeTower(images.mcannon, 1, 180, 2000, "missile", e)
+    $("#missileCannon").on("click", function () {
+        placeTower(images.mcannon, towerStats["mcannon"].sizeMod, 
+        towerStats["mcannon"].range, towerStats["mcannon"].firingSpeed, "mcannon")
     })
 })
-function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
+function placeTower (imageSrc, sizeMod, range, firingSpeed, id) {
+    pointerId = id
+    let posX, posY
     pointerLayer.style.pointerEvents = "auto"
     pointerLayer.style.touchAction = "auto"
     $('[class="edge"').each(function () {
@@ -553,25 +501,16 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
         $(this)[0].style.pointerEvents = "auto"
         $(this)[0].style.touchAction = "auto"
     })
-    // Animates tower placement preview
-    function animate (e) {
+
+    function updateMousePos (e) {
         position = getMousePos(pointerLayer, e)
+        pointerActive = true
         posX = position.x - (imageSrc.width * sizeMod / 2)
         posY = position.y - (imageSrc.height * sizeMod / 2)
-        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
-        pointerContext.beginPath();
-        pointerContext.arc(position.x, position.y, range, 0, 2 * pi);
-        pointerContext.fill()
-        pointerContext.stroke();
-        pointerContext.save()
-        pointerContext.translate(position.x, position.y)
-        pointerContext.rotate(3 * pi / 2)
-        pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
-        pointerContext.restore()
     }
-    animate(e)
 
     function removeEvents () {
+        $("#pointerLayer").off("touchstart")
         $("#pointerLayer").off("touchmove")
         $("#pointerLayer").off("touchend")
         $(".edge").off("touchmove")
@@ -581,7 +520,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
         $("#pointerLayer").off("pointerdown")
         $(".edge").off("pointerup")
 
-        $("#void").on("pointerup touchend")
+        $("#void").off("pointerup touchend")
 
         $('[class="edge"').each(function () {
             $(this)[0].style.pointerEvents = "none"
@@ -591,29 +530,38 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
     }
 
     function touchAction (e) {
-        animate(e)
+        updateMousePos(e)
         $(".edge").off("pointerup")
         $(".edge").off("pointerdown")
         $("#pointerLayer").off("pointerdown")
         $("#pointerLayer").off("pointermove")
     }
+
+    function pointerAction (e) {
+        updateMousePos(e)
+        $("#pointerLayer").off("touchstart")
+        $("#pointerLayer").off("touchmove")
+        $("#pointerLayer").off("touchend")
+        $(".edge").off("touchmove")
+        $(".edge").off("touchend")
+    }
+
     $("#pointerLayer").on("touchstart", function (e) {
         touchAction(e)
     })
     $("#pointerLayer").on("touchmove", function (e) {
         touchAction(e)
     })
-    $("#pointerLayer").on("touchend", function (e) {
-        touchAction(e)
+    $("#pointerLayer").on("touchend", function () {
         pointerLayer.style.pointerEvents = "none"
         pointerLayer.style.touchAction = "none"
     })
-    $(".edge").on("touchmove", function () {
-        animate(e)
+    $(".edge").on("touchmove", function (e) {
+        touchAction(e)
     })
     $(".edge").on("touchend", function () {
         removeEvents()
-        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+        pointerActive = false
         $('[class="edge"').each(function () {
             $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
         })
@@ -651,25 +599,19 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
 
     $("#void").on("pointerup touchend", function () {
         removeEvents()
-        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+        pointerActive = false
     })
     
     $("#pointerLayer").on("pointermove", function (e) {
-        animate(e)
-        $("#pointerLayer").off("touchstart")
-        $("#pointerLayer").off("touchmove")
-        $("#pointerLayer").off("touchend")
-        $(".edge").off("touchmove")
-        $(".edge").off("touchend")
+        pointerAction(e)
     })
     $("#pointerLayer").on("pointerdown", function () {
         pointerLayer.style.pointerEvents = "none"
         pointerLayer.style.touchAction = "none"
-        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
     })
     $(".edge").on("pointerup", function () {
         removeEvents()
-
+        pointerActive = false
         let towersLen = towers.length
         // Doesn't allow for towers to be placed over one another
         for (let i = 0; i < towersLen; i++) {
@@ -702,9 +644,89 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
     })
 }
 
+// appends projectile object to the projectiles array.
+function appendProjectile (towerIndex) {
+    let imageSrc, speed, sizeMod, dmg
+    if (towers[towerIndex].id == "mcannon") {
+        imageSrc = images.missile
+        speed = 2
+        sizeMod = 1
+        dmg = 50
+    }
+    projectiles.push({
+        sIndex: towers[towerIndex].sIndex,
+        tIndex: towerIndex,
+        x: towers[towerIndex].x + (towers[towerIndex].width / 2),
+        y: towers[towerIndex].y + (towers[towerIndex].height / 2),
+        image: imageSrc,
+        height: imageSrc.height * sizeMod,
+        width: imageSrc.width * sizeMod,
+        speed: speed,
+        radian: towers[towerIndex].radian,
+        dmg: dmg,
+        target: true
+    })
+}
+
+// function that appends sprites object to sprites array
+function appendSpriteArray (numOfSprites, spriteSpeed, imageSrc, health, sizeMod) {
+    for (let i = 0; i < numOfSprites; i++) {
+        sprites.push({
+            hp: health, 
+            x: 0,
+            y: 0,
+            speed: spriteSpeed,
+            image: imageSrc,
+            width: imageSrc.width * sizeMod,
+            height: imageSrc.height * sizeMod,
+            path: getRandomInt(paths.length),
+            index: 0,
+        })
+    }
+}
+
+// function that spawns sprites in sprite array.
+function renderSprites() {
+    spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
+    for (let i = 0; i < spawned; i++) {
+        let roundedIndex = Math.round(sprites[i].index)
+        if (roundedIndex > paths[sprites[i].path].length - 1) 
+            continue
+        if (sprites[i].hp <= 0) 
+            continue
+            
+        spriteContext.save()
+        spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
+        spriteContext.rotate(paths[sprites[i].path][roundedIndex].r)
+        spriteContext.drawImage(sprites[i].image, (-sprites[i].width / 2), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
+        spriteContext.restore()
+        sprites[i].x = paths[sprites[i].path][roundedIndex].x
+        sprites[i].y = paths[sprites[i].path][roundedIndex].y
+        sprites[i].index = sprites[i].index + sprites[i].speed
+    }
+}
+
+// function that renders tower placement
+function renderPointers() {
+    if (pointerActive) {
+        let imageSrc = images[pointerId]
+        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+        pointerContext.beginPath();
+        pointerContext.arc(position.x, position.y, towerStats[pointerId].range, 0, 2 * pi);
+        pointerContext.fill()
+        pointerContext.stroke();
+        pointerContext.save()
+        pointerContext.translate(position.x, position.y)
+        pointerContext.rotate(3 * pi / 2)
+        pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
+        pointerContext.restore()
+    }
+    else
+        pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+}
+
 // Renders all towers in tower array and rotates them to first sprite to enter their range.
-let spritesLen
-function renderTowers () {
+function renderTowers() {
     let towersLen = towers.length
     towerContext.clearRect(0, 0, towerLayer.width, towerLayer.height)
 
@@ -728,7 +750,7 @@ function renderTowers () {
 
             let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
             if (dTheta > tenDeg) {
-                towers[i].radian = towers[i].radian + (towers[i].direction * fourDeg)
+                towers[i].radian = towers[i].radian + (towers[i].direction * twoDeg)
                 if (towers[i].radian < 0)
                     towers[i].radian = towers[i].radian + twoPi
                 else if (towers[i].radian > twoPi)
@@ -786,36 +808,6 @@ function renderTowers () {
         towerContext.drawImage(towers[i].image, (-towers[i].width / 2), (-towers[i].height / 2), towers[i].width, towers[i].height)
         towerContext.restore()
     }
-    if (stopAnimation == false) {
-        setTimeout(() => {
-            requestAnimationFrame(renderTowers)
-        }, 34)
-    }
-        
-}
-
-// appends projectile object to the projectiles array.
-function appendProjectile (towerIndex) {
-    let imageSrc, speed, sizeMod, dmg
-    if (towers[towerIndex].id == "missile") {
-        imageSrc = images.missile
-        speed = 4
-        sizeMod = 1
-        dmg = 50
-    }
-    projectiles.push({
-        sIndex: towers[towerIndex].sIndex,
-        tIndex: towerIndex,
-        x: towers[towerIndex].x + (towers[towerIndex].width / 2),
-        y: towers[towerIndex].y + (towers[towerIndex].height / 2),
-        image: imageSrc,
-        height: imageSrc.height * sizeMod,
-        width: imageSrc.width * sizeMod,
-        speed: speed,
-        radian: towers[towerIndex].radian,
-        dmg: dmg,
-        target: true
-    })
 }
 
 // Renders projectiles in projectile array.
@@ -891,12 +883,20 @@ function renderProjectiles() {
             i--
         }
     }
+}
+
+// The actual animation frame function for rendering all sprites, towers, and projectiles.
+function render() {
+    renderSprites()
+    renderPointers()
+    renderTowers()
+    renderProjectiles()
+
     if (stopAnimation == false) {
         setTimeout(() => {
-            requestAnimationFrame(renderProjectiles)
-        }, 34)
+            requestAnimationFrame(render)
+        }, 17)
     }
-        
 }
 
 // Waits to load the Asteroid defense map data before firing any code.
@@ -922,10 +922,23 @@ function loadAsteroid () {
 
 // Begins Asteroid defense sprite spawning.
 let checkFiring,
-    spawnRate = 1000
+    spawnRate = 1000,
+    spawning,
+    spawned
 function runAsteroid() {
-    appendSpriteArray(1000, 3, images.drone, 100, 1.2)
-    renderSprites(sprites.length)
+    appendSpriteArray(1000, 1, images.drone, 100, 1.2)
+    
+    spawned = 0
+    let numOfSprites = sprites.length
+    spawning = setInterval(function () {
+        if (spawned == 0)
+            render()
+        if (spawned < numOfSprites) 
+            spawned++
+        else
+            clearInterval(spawning)
+    }, spawnRate)
+
     edgeLayer.style.display = "block"
     edgeLayer.style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"
     
@@ -943,6 +956,5 @@ function runAsteroid() {
             }
         }
     }, 1000)
-    renderTowers()
-    renderProjectiles()
+    
 }
