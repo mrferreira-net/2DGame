@@ -104,6 +104,8 @@ button {
     top: 5px;
     right: 5px;
     z-index: inherit;
+    width: auto;
+    height: auto;
 }
 #fullscreenButton {
     position: relative;

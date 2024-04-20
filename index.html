@@ -68,13 +68,35 @@
                 </menu>
     
                 <menu id="gameControls">
-                    <div style="z-index: inherit; width: 190px; height: 460px; bottom: 0px; right: 0px; background-color: rgba(0, 0, 0, 0.637);
-                    position: absolute; border-radius: 10%; border-bottom-left-radius: 0%; border-bottom-right-radius: 0%; border-top-right-radius: 0%;"></div>
-                    <div style="z-index: inherit; width: 330px; height: 100px; bottom: 0px; right: 190px; background-color: rgba(0, 0, 0, 0.637);
-                    position: absolute; border-radius: 10%; border-bottom-right-radius: 0%; border-top-right-radius: 0%; border-bottom-left-radius: 0%;"></div>
+                    <div style="z-index: inherit;
+                    width: 190px; 
+                    height: 460px;
+                    bottom: 0px;
+                    right: 0px;
+                    background-color: rgba(0, 0, 0, 0.637);
+                    position: absolute;
+                    border-radius: 10%;
+                    border-bottom-left-radius: 0%;
+                    border-bottom-right-radius: 0%;
+                    border-top-right-radius: 0%;
+                    pointer-events: none;
+                    touch-action: none;"></div>
+                    <div style="z-index: inherit;
+                    width: 330px;
+                    height: 100px;
+                    bottom: 0px;
+                    right: 190px;
+                    background-color: rgba(0, 0, 0, 0.637);
+                    position: absolute;
+                    border-radius: 10%;
+                    border-bottom-right-radius: 0%;
+                    border-top-right-radius: 0%;
+                    border-bottom-left-radius: 0%;
+                    pointer-events: none;
+                    touch-action: none;"></div>
                     
     
-                    <button id="backToMenu" onclick="screenTransition(event)">Main Menu</button>
+                    <button id="backToMenu" class="gameButton" onclick="screenTransition(event)">Main Menu</button>
                     <div id="gamePanel">
                         <button id="missileCannon" class="gameButton" style="bottom: 5px;">
                             <img src="Assets/Sprites/testsprite1.png" alt="">

@@ -1,19 +1,8 @@
 const oneDeg = Math.PI / 180
-const twentyDeg = oneDeg * 20
 const tenDeg = oneDeg * 10
-const fourDeg = oneDeg * 4
 const twoDeg = oneDeg * 2
 const pi = Math.PI
 const twoPi = Math.PI * 2
-
-
-const towerStats = {
-    "mcannon": {
-        sizeMod: 1, 
-        range: 180, 
-        firingSpeed: 2000,
-    }
-}
 
 // Waits for document to be ready before grabbing DOM stuff.
 let spriteLayer, spriteContext, towerLayer, towerContext, pointerLayer, pointerContext, projectileLayer,
@@ -46,11 +35,10 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
-    test() //temporary
 })
 
 // Loads all images into image object before user can use the program.
-let images
+let images, checkLoading
 function loading () {
     images = {
         "drone": new Image(),
@@ -73,7 +61,8 @@ function loading () {
     let boolArray = []
     for (let i in images) 
         boolArray.push({bool:false})
-    
+    let boolArrayLen = boolArray.length
+
     images.drone.onload = function () {boolArray[0].bool = true}
     images.mcannon.onload = function () {boolArray[1].bool = true}
     images.menace.onload = function () {boolArray[2].bool = true}
@@ -82,13 +71,15 @@ function loading () {
     images.polygon.onload = function () {boolArray[5].bool = true}
     images.missile.onload = function () {boolArray[6].bool = true}
 
-    let checkLoading = setInterval (function () {
-        let boolArrayLen = boolArray.length
-        for (let i = 0; i < boolArrayLen; i++) {
-            if (boolArray[i].bool == false)
-                return
-            loadingScreen.style.display = "none"
+    checkLoading = setInterval (function () {
+        if (!paused) {
+            for (let i = 0; i < boolArrayLen; i++) {
+                if (boolArray[i].bool == false)
+                    return
+            }
             clearInterval(checkLoading)
+            loadingScreen.style.display = "none"
+            //test() // temporary
         }
     }, 1000)
 }
@@ -191,10 +182,7 @@ function fullscreenButton() {
 }
 
 // executes the selected map when play button is pressed.
-let paths = [],
-    towers = [],
-    sprites = [],
-    projectiles = []
+let paths = [], towers = [], sprites = [], projectiles = []
 function play() {
     let map = $('#mapPreviewText').html()
     if (map == "Asteroid Defense") {
@@ -202,6 +190,15 @@ function play() {
         loadAsteroid()
     }   
 }
+
+// Pauses game if tabbed out
+let paused = false
+$(document).on("visibilitychange", function() {
+    if (document.visibilityState == 'hidden')
+        paused = true
+    else 
+        paused = false
+})
 
 // Loads sprite path data from Game Data files.
 let pathSmoothingIndex = 15
@@ -336,14 +333,16 @@ function test() {
 }
 
 // Resets game related global variables, HTML elements, and intervals.
-let stopAnimation = false
+let stopRender = false
 function reset () {
-    stopAnimation = true
+    stopRender = true
+    spawned = 0
 
-    clearInterval(checkLoading)
     clearInterval(spawning)
     clearInterval(checkFiring)
-    
+    clearInterval(waveRunning)
+    clearInterval(checkPathLoading)
+    clearInterval(checkLoading)
     let towersLen = towers.length
     for (let i = 0 ; i < towersLen; i++) 
         clearInterval(towers[i].firingInterval)
@@ -481,17 +480,26 @@ function headsOrTails () {
     return Math.random() < 0.5
 }
 
+const towerStats = {
+    "mcannon": {
+        sizeMod: 1, 
+        range: 180, 
+        firingSpeed: 2000,
+        projectileId: "missile",
+        projectileSpeed: 1.5,
+        projectileSizeMod: 1,
+        projectileDmg: 33.4
+    }
+}
 // handles tower placement and appending tower to towers array.
-let position,
-    pointerActive = false,
-    pointerId
+let position, pointerActive = false, pointerId
 $(document).ready(function () {
-    $("#missileCannon").on("click", function () {
-        placeTower(images.mcannon, towerStats["mcannon"].sizeMod, 
-        towerStats["mcannon"].range, towerStats["mcannon"].firingSpeed, "mcannon")
+    $("#missileCannon").on("click", function (e) {
+        appendTower(images.mcannon, towerStats["mcannon"].sizeMod, 
+        towerStats["mcannon"].range, towerStats["mcannon"].firingSpeed, "mcannon", e)
     })
 })
-function placeTower (imageSrc, sizeMod, range, firingSpeed, id) {
+function appendTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
     pointerId = id
     let posX, posY
     pointerLayer.style.pointerEvents = "auto"
@@ -508,6 +516,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id) {
         posX = position.x - (imageSrc.width * sizeMod / 2)
         posY = position.y - (imageSrc.height * sizeMod / 2)
     }
+    updateMousePos(e)
 
     function removeEvents () {
         $("#pointerLayer").off("touchstart")
@@ -521,6 +530,7 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id) {
         $(".edge").off("pointerup")
 
         $("#void").off("pointerup touchend")
+        $(".gameButton").off("pointerup touchend")
 
         $('[class="edge"').each(function () {
             $(this)[0].style.pointerEvents = "none"
@@ -601,6 +611,10 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id) {
         removeEvents()
         pointerActive = false
     })
+    $(".gameButton").on("pointerup touchend", function () {
+        removeEvents()
+        pointerActive = false
+    })
     
     $("#pointerLayer").on("pointermove", function (e) {
         pointerAction(e)
@@ -646,13 +660,12 @@ function placeTower (imageSrc, sizeMod, range, firingSpeed, id) {
 
 // appends projectile object to the projectiles array.
 function appendProjectile (towerIndex) {
-    let imageSrc, speed, sizeMod, dmg
-    if (towers[towerIndex].id == "mcannon") {
-        imageSrc = images.missile
-        speed = 2
-        sizeMod = 1
-        dmg = 50
-    }
+    let towerType = towers[towerIndex].id,
+        imageSrc = images[towerStats[towerType].projectileId], 
+        speed = towerStats[towerType].projectileSpeed, 
+        sizeMod = towerStats[towerType].projectileSizeMod, 
+        dmg = towerStats[towerType].projectileDmg
+
     projectiles.push({
         sIndex: towers[towerIndex].sIndex,
         tIndex: towerIndex,
@@ -668,8 +681,20 @@ function appendProjectile (towerIndex) {
     })
 }
 
+const spriteStats = {
+    "drone": {
+        speed: 1,
+        hp: 100,
+        sizeMod: 1.2
+    },
+    "menace": {
+        speed: 1,
+        hp: 200,
+        sizeMod: 1
+    }
+}
 // function that appends sprites object to sprites array
-function appendSpriteArray (numOfSprites, spriteSpeed, imageSrc, health, sizeMod) {
+function appendSprite (numOfSprites, spriteSpeed, imageSrc, health, sizeMod) {
     for (let i = 0; i < numOfSprites; i++) {
         sprites.push({
             hp: health, 
@@ -681,6 +706,7 @@ function appendSpriteArray (numOfSprites, spriteSpeed, imageSrc, health, sizeMod
             height: imageSrc.height * sizeMod,
             path: getRandomInt(paths.length),
             index: 0,
+            despawned: false
         })
     }
 }
@@ -690,10 +716,13 @@ function renderSprites() {
     spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
     for (let i = 0; i < spawned; i++) {
         let roundedIndex = Math.round(sprites[i].index)
-        if (roundedIndex > paths[sprites[i].path].length - 1) 
+        if ((roundedIndex > paths[sprites[i].path].length - 1) && sprites[i].despawned == false) {
+            // Do damage to player
+        }
+        if ((roundedIndex > paths[sprites[i].path].length - 1) || (sprites[i].hp <= 0) || sprites[i].despawned) {
+            sprites[i].despawned = true
             continue
-        if (sprites[i].hp <= 0) 
-            continue
+        }
             
         spriteContext.save()
         spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
@@ -765,7 +794,7 @@ function renderTowers() {
         else {
             spritesLen = sprites.length
             for (let j = 0; j < spritesLen; j++) {
-                if (sprites[j].hp <= 0)
+                if (sprites[j].despawned)
                     continue
                 let dx = sprites[j].x - (towers[i].x + (towers[i].width / 2)),
                     dy = sprites[j].y - (towers[i].y + (towers[i].height / 2)),
@@ -774,7 +803,7 @@ function renderTowers() {
                 if (hypotenuse <= towers[i].range) {
                     towers[i].sRadian = getRadian(dx, dy)
                     let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
-                    if (dTheta > twentyDeg) {
+                    if (dTheta > tenDeg) {
                         towers[i].gTurn = true
                         if (towers[i].radian < towers[i].sRadian) {
                             if (((twoPi - towers[i].sRadian) + towers[i].radian) > dTheta) 
@@ -892,23 +921,60 @@ function render() {
     renderTowers()
     renderProjectiles()
 
-    if (stopAnimation == false) {
+    if (stopRender == false && waveEnded == false) {
         setTimeout(() => {
             requestAnimationFrame(render)
         }, 17)
     }
 }
 
+// Starts spawning the sprites in the sprite array, and Checks if wave is over, then it clears the sprites array.
+let spawning, waveRunning, spawned = 0, waveEnded = false
+function startWave (nextWave) {
+    let numOfSprites = sprites.length
+
+    waveEnded = false
+    render()
+
+    spawning = setInterval(function () {
+        if (!paused) {
+            if (spawned < numOfSprites) 
+                spawned++
+            else 
+                clearInterval(spawning)
+        }
+    }, spawnRate)
+
+    let spritesLen = sprites.length
+    waveRunning = setInterval (function () {
+        if (!paused) {
+            for (let i = 0; i < spritesLen; i++) {
+                if (sprites[i].despawned == false)
+                    return
+            }
+            clearInterval(waveRunning)
+            waveEnded = true
+            setTimeout(() => {
+                sprites = []
+                spawned = 0
+                nextWave()
+            }, 50)
+        }
+    }, 2000)
+}
+
 // Waits to load the Asteroid defense map data before firing any code.
-let checkLoading
+let checkPathLoading
 function loadAsteroid () {
     let pathsLoaded = false
-    checkLoading = setInterval (function() {
-        if (pathsLoaded) {
-            clearInterval(checkLoading)
-            loadingScreen.style.display = "none"
-            stopAnimation = false
-            runAsteroid()
+    checkPathLoading = setInterval (function() {
+        if (!paused) {
+            if (pathsLoaded) {
+                clearInterval(checkPathLoading)
+                loadingScreen.style.display = "none"
+                stopRender = false
+                runAsteroid()
+            }
         }
     }, 1000)
     // Load Paths
@@ -921,40 +987,42 @@ function loadAsteroid () {
 }
 
 // Begins Asteroid defense sprite spawning.
-let checkFiring,
-    spawnRate = 1000,
-    spawning,
-    spawned
+let checkFiring, spawnRate = 1500
 function runAsteroid() {
-    appendSpriteArray(1000, 1, images.drone, 100, 1.2)
-    
-    spawned = 0
-    let numOfSprites = sprites.length
-    spawning = setInterval(function () {
-        if (spawned == 0)
-            render()
-        if (spawned < numOfSprites) 
-            spawned++
-        else
-            clearInterval(spawning)
-    }, spawnRate)
-
     edgeLayer.style.display = "block"
     edgeLayer.style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"
-    
+
     checkFiring = setInterval (function () {
-        let towersLen = towers.length
-        for (let i = 0; i < towersLen; i++) {
-            if (towers[i].firing == true && towers[i].firingInterval == null) {
-                towers[i].firingInterval = setInterval(function () {
-                    appendProjectile(i)
-                }, towers[i].firingSpeed)
-            }
-            else if (towers[i].firing == false && towers[i].firingInterval != null) {
-                clearInterval(towers[i].firingInterval)
-                towers[i].firingInterval = null
+        if (!paused) {
+            let towersLen = towers.length
+            for (let i = 0; i < towersLen; i++) {
+                if (towers[i].firing == true && towers[i].firingInterval == null) {
+                    towers[i].firingInterval = setInterval(function () {
+                        if (!paused) 
+                            appendProjectile(i)
+                    }, towers[i].firingSpeed)
+                }
+                else if (towers[i].firing == false && towers[i].firingInterval != null) {
+                    clearInterval(towers[i].firingInterval)
+                    towers[i].firingInterval = null
+                }
             }
         }
     }, 1000)
     
+    appendSprite(3, spriteStats["drone"].speed, images.drone, spriteStats["drone"].hp, spriteStats["drone"].sizeMod)
+    startWave(wave2)
+    function wave2() {
+        appendSprite(1, spriteStats["drone"].speed, images.drone, spriteStats["drone"].hp, spriteStats["drone"].sizeMod)
+        appendSprite(1, spriteStats["menace"].speed, images.menace, spriteStats["menace"].hp, spriteStats["menace"].sizeMod)
+        startWave(wave3)
+    }
+    function wave3() {
+        appendSprite(3, spriteStats["drone"].speed, images.drone, spriteStats["drone"].hp, spriteStats["drone"].sizeMod)
+        appendSprite(1, spriteStats["menace"].speed, images.menace, spriteStats["menace"].hp, spriteStats["menace"].sizeMod)
+        startWave(wave4)
+    }
+    function wave4() {
+
+    }
 }
