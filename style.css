@@ -149,9 +149,6 @@ a {
     font-size: larger;
     display: block;
 }
-#mobilePlacement {
-    display: none;
-}
 .gameButton {
     display: flex; 
     position: relative;
@@ -160,4 +157,10 @@ a {
     text-wrap: nowrap;
     text-align: left;
     padding: 2px;
+}
+.healthSquare {
+    width: 10px;
+    height: 15px;
+    background-color: blue;
+    display: block;
 }

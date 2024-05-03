@@ -80,7 +80,7 @@ function loading () {
             clearInterval(checkLoading)
             loadingScreen.style.display = "none"
             loadStatData()
-            //test() // temporary
+            test() // temporary
         }
     }, 1000)
 }
@@ -214,7 +214,7 @@ function fullscreenButton() {
 }
 
 // executes the selected map when play button is pressed.
-let paths = [], towers = [], sprites = [], projectiles = []
+let paths = [], towers = [], sprites = [], projectiles = [], playerHP = 10
 function play() {
     let map = $('#mapPreviewText').html()
     if (map == "Asteroid Defense") {
@@ -354,13 +354,7 @@ function loadPaths (data) {
 // test function that runs game.
 function test() {
     reset()
-    container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')"
-    gameControls.style.display = "block"
-    spriteLayer.style.display = "block"
-    towerLayer.style.display = "block"
-    mapsControls.style.display = "none"
-    settingsControls.style.display = "none"
-    menuControls.style.display = "none"
+    screenTransition("AsteroidDefense")
     loadAsteroid()
 }
 
@@ -369,6 +363,7 @@ let stopRender = false
 function reset () {
     stopRender = true
     waveEnded = false
+    startNextWave = false
     spawned = 0
 
     clearInterval(spawning)
@@ -376,6 +371,7 @@ function reset () {
     clearInterval(waveRunning)
     clearInterval(checkPathLoading)
     clearInterval(checkLoading)
+    clearInterval(waveTimer)
     let towersLen = towers.length
     for (let i = 0 ; i < towersLen; i++) 
         clearInterval(towers[i].firingInterval)
@@ -384,6 +380,7 @@ function reset () {
     towers = []
     sprites = []
     projectiles = []
+    playerHP = 10
     
     $("#edgeContainer").empty()
 
@@ -725,6 +722,12 @@ function appendSprite (numOfSprites, spriteType) {
     }
 }
 
+// Functions triggers when playerHP reaches 0, informs player of losing and deals with variables and gives,
+// player option to retry or return to menu.
+function playerDead () {
+    reset()
+}
+
 // function that spawns sprites in sprite array.
 function renderSprites() {
     spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
@@ -732,6 +735,13 @@ function renderSprites() {
         let roundedIndex = Math.round(sprites[i].index)
         if ((roundedIndex > paths[sprites[i].path].length - 1) && sprites[i].despawned == false) {
             // Do damage to player
+            $('#' + playerHP + 'hp')[0].style.display = "none"
+            playerHP--
+            if (playerHP == 0){
+                playerDead()
+                return
+            }
+                
         }
         if ((roundedIndex > paths[sprites[i].path].length - 1) || (sprites[i].hp <= 0) || sprites[i].despawned) {
             sprites[i].despawned = true
@@ -943,9 +953,25 @@ function render() {
     }
 }
 
+// Allows player to start next wave once all the sprites of the current wave have been killed/despawned.
+let startNextWave = false
+function startNextWaveButton () {
+    let spritesLen = sprites.length
+    for (let i = 0; i < spritesLen; i++) {
+        if (sprites[i].despawned == false) {
+            alert("Cannot start next wave until there are no enemy units in the current wave.")
+            return
+        }
+    }
+    startNextWave = true
+}
+
 // Starts spawning the sprites in the sprite array, and Checks if wave is over, then it clears the sprites array.
-let spawning, waveRunning, spawned = 0, waveEnded = false
-function startWave (nextWave, rawWaveInfo) {
+// This function is passed information about the next wave and initiates the next wave once the current wave is over.
+// Takes argument variable with amount of seconds in integer form until the next wave and waits to render the next wave.
+let spawning, waveRunning, spawned = 0, waveEnded = false,
+    waveTimer
+function startWave (nextWave, rawWaveInfo, timeTillNext) {
     // Reads sprite array to pass the next wave information to DOM.
     function readWaveInfo (rawWaveInfo) {
         let rawWaveInfoLen = rawWaveInfo.length,
@@ -975,12 +1001,20 @@ function startWave (nextWave, rawWaveInfo) {
         waveNum = nextWave.name.slice(4),
         parsedWaveInfo = readWaveInfo(rawWaveInfo),
         waveInfoText = ""
+    $('#waveNumber').html(Number(waveNum) - 1)
     $('#nextWaveNumber').html(waveNum)
     for (let i in parsedWaveInfo)
         waveInfoText = waveInfoText + parsedWaveInfo[i] + " " + i + ", "
     $('#nextWaveSprites').html(waveInfoText.slice(0, waveInfoText.length - 2))
-    render()
+    let secondsString = (timeTillNext % 60).toString(),
+        zeroInFront = ""
+    if (secondsString.length == 1)
+        zeroInFront = "0"
+    $('#nextWaveTimer').html(Math.trunc(timeTillNext / 60) + "m:" + zeroInFront + secondsString + "s")
 
+    loadingScreen.style.display = "none"
+
+    render()
     spawning = setInterval(function () {
         if (!paused) {
             if (spawned < numOfSprites) 
@@ -990,25 +1024,31 @@ function startWave (nextWave, rawWaveInfo) {
         }
     }, spawnRate)
 
-    let spritesLen = sprites.length
-    waveRunning = setInterval (function () {
+    waveTimer = setInterval(function () {
         if (!paused) {
-            for (let i = 0; i < spritesLen; i++) {
-                if (sprites[i].despawned == false)
-                    return
+            timeTillNext--
+            let secondsString = (timeTillNext % 60).toString(),
+                zeroInFront = ""
+            if (secondsString.length == 1)
+                zeroInFront = "0"
+            $('#nextWaveTimer').html(Math.trunc(timeTillNext / 60) + "m:" + zeroInFront + secondsString + "s")
+            if (timeTillNext == 0 || startNextWave) {
+                clearInterval(waveTimer)
+                startNextWave = false
+                waveEnded = true
+                setTimeout(() => {
+                    sprites = []
+                    let projectilesLen = projectiles.length
+                    for (let i = 0; i < projectilesLen; i++) 
+                        projectiles[i].target = false
+                    spawned = 0
+                    nextWave(parsedWaveInfo)
+                }, 100)
             }
-            clearInterval(waveRunning)
-            waveEnded = true
-            setTimeout(() => {
-                sprites = []
-                let projectilesLen = projectiles.length
-                for (let i = 0; i < projectilesLen; i++) 
-                    projectiles[i].target = false
-                spawned = 0
-                nextWave(parsedWaveInfo)
-            }, 50)
         }
-    }, 2000)
+    }, 1000)
+
+    
 }
 
 // Waits to load the Asteroid defense map data before firing any code.
@@ -1019,7 +1059,6 @@ function loadAsteroid () {
         if (!paused) {
             if (pathsLoaded) {
                 clearInterval(checkPathLoading)
-                loadingScreen.style.display = "none"
                 stopRender = false
                 runAsteroid()
             }
@@ -1042,17 +1081,17 @@ function runAsteroid() {
 
     // Wave info is formatted as the integer number of sprites, a space, 
     // then the sprite type followed by a comma to seperate sprites.
-    startWave(wave1, "10 drone")
+    startWave(wave1, "10 drone", 15)
 
     function wave1(waveInfo) {
         for (let i in waveInfo)
             appendSprite(waveInfo[i], i)
-        startWave(wave2, "5 drone, 5 menace")
+        startWave(wave2, "5 drone, 5 menace", 60)
     }
     function wave2(waveInfo) {
         for (let i in waveInfo)
             appendSprite(waveInfo[i], i)
-        startWave(wave3, "10 drone, 5 menace")
+        startWave(wave3, "10 drone, 5 menace", 60)
     }
     function wave3(waveInfo) {
         for (let i in waveInfo)
