@@ -4,6 +4,88 @@ const twoDeg = oneDeg * 2
 const pi = Math.PI
 const twoPi = Math.PI * 2
 
+// developement tool for creating sprite path data.
+let createdPath = []
+function createPath () {
+    container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')"
+    gameControls.style.display = "none"
+    mapsControls.style.display = "none"
+    settingsControls.style.display = "none"
+    menuControls.style.display = "none"
+
+    spriteLayer.style.pointerEvents = "auto"
+    let mouseDown = false
+    $("#spriteLayer").on("pointermove", function (e) {
+        let position = getMousePos(spriteLayer, e)
+        if (mouseDown) {
+            let lastPositionIndex = createdPath.length - 1
+            createdPath.push({
+                x: position.x, 
+                y: position.y
+            })
+            if (lastPositionIndex >= 0)
+                spriteContext.moveTo(createdPath[lastPositionIndex].x, createdPath[lastPositionIndex].y)
+            spriteContext.lineTo(position.x, position.y)
+            spriteContext.stroke()
+        }
+    })
+    $(document).on("pointerdown", function () {
+        mouseDown = true
+    })
+    $(document).on("pointerup", function () {
+        mouseDown = false //BREAK POINT HERE
+        $("#spriteLayer").off("pointermove")
+        $(document).off("pointerdown")
+        $(document).off("pointerup")
+    })
+}
+
+// Deals with javascript radian weirdness.
+function getRadian (dx, dy) {
+    let radian = Math.atan(dy / dx)
+    if (Math.sign(dx) == -1)
+        radian = radian + pi
+    if (radian < 0)
+        radian = radian + twoPi
+    if (isNaN(radian))
+        radian = 0
+    return radian
+}
+
+// Returns mouse position on canvas.
+function getMousePos(canvas, e) {
+    let agentX = e.clientX,
+        agentY = e.clientY
+    if (e.type == "touchstart" || e.type == "touchmove" || e.type == "touchend" || e.type == "touchcancel") {
+        let touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0]
+        agentX = touch.pageX
+        agentY = touch.pageY
+    }
+
+    var rect = canvas.getBoundingClientRect(),
+        x = agentX - rect.left
+        y = agentY - rect.top 
+
+    return {
+        x: x,   
+        y: y
+    }
+}
+
+// Returns a random number between the parameters.
+function getRandomNum(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
+// Returns a 50/50 boolean.
+function headsOrTails () {
+    return Math.random() < 0.5
+}
+
 // Waits for document to be ready before grabbing DOM stuff.
 let spriteLayer, spriteContext, towerLayer, towerContext, pointerLayer, pointerContext, projectileLayer,
     projectileContext, edgeLayer, container, gameControls, mapsControls, settingsControls, menuControls,
@@ -35,6 +117,109 @@ $(document).ready(function () {
     towerContext.strokeStyle = "rgb(161, 241, 255)"
 
     loading()
+})
+
+// test function that runs game.
+function test() {
+    reset()
+    screenTransition("AsteroidDefense")
+    loadAsteroid()
+}
+
+// Resets game related global variables, HTML elements, and intervals.
+let stopRender = false
+function reset () {
+    stopRender = true
+    waveEnded = false
+    startNextWave = false
+    paused = false
+    spawned = 0
+
+    clearInterval(spawning)
+    clearInterval(checkFiring)
+    clearInterval(waveRunning)
+    clearInterval(checkPathLoading)
+    clearInterval(checkLoading)
+    clearInterval(waveTimer)
+    let towersLen = towers.length
+    for (let i = 0 ; i < towersLen; i++) 
+        clearInterval(towers[i].firingInterval)
+
+    paths = []
+    towers = []
+    sprites = []
+    projectiles = []
+    playerHP = 10
+    
+    $("#edgeContainer").empty()
+    $("#gameOverScreen")[0].style.display = "none"
+    $('[class="healthSquare"').each(function () {
+        $(this)[0].style.display = "block"
+    })
+
+    spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
+    towerContext.clearRect(0, 0, towerLayer.width, towerLayer.height)
+    pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
+    projectileContext.clearRect(0, 0, projectileLayer.width, projectileLayer.height)
+}
+
+// executes the selected map when play button is pressed.
+let paths = [], towers = [], sprites = [], projectiles = [], playerHP = 10, playerCredits
+function play() {
+    reset()
+    let map = $('#mapPreviewText').html()
+    if (map == "Asteroid Defense") {
+        screenTransition("AsteroidDefense")
+        loadAsteroid()
+    }   
+}
+
+// Modifies visible DOM elements in between the main menu and game.
+function screenTransition(event) {
+    let string
+    if (event.target == undefined) 
+        string = event
+    else 
+        string = event.target.innerHTML
+
+    loadingScreen.style.display = "block"
+    gameControls.style.display = "none"
+    mapsControls.style.display = "none"
+    settingsControls.style.display = "none"
+    menuControls.style.display = "none"
+    spriteLayer.style.display = "none"
+    towerLayer.style.display = "none"
+    container.style.backgroundImage = "url('Assets/Backgrounds/menu.png')"
+    if (string == "Main Menu") {
+        loadingScreen.style.display = "none"
+        menuControls.style.display = "block"
+        edgeLayer.style.display = "none"
+        reset()
+    }
+    else if (string == "Settings") {
+        loadingScreen.style.display = "none"
+        settingsControls.style.display = "block"
+    }
+        
+    else if (string == "Maps") {
+        loadingScreen.style.display = "none"
+        mapsControls.style.display = "block"
+    }
+    else {
+        gameControls.style.display = "block"
+        spriteLayer.style.display = "block"
+        towerLayer.style.display = "block"
+        container.style.backgroundImage = "url('Assets/Backgrounds/" + string + ".png')"
+    }
+}
+
+// Pauses game if tabbed out
+let paused = false
+$(document).on("visibilitychange", function() {
+    if (document.visibilityState == 'hidden')
+        paused = true
+    else 
+        paused = false
 })
 
 // Loads all images into image object before user can use the program.
@@ -80,157 +265,10 @@ function loading () {
             clearInterval(checkLoading)
             loadingScreen.style.display = "none"
             loadStatData()
-            //test() // temporary
+            test() // temporary
         }
     }, 1000)
 }
-
-// Is triggered when all image data is loaded to define sprite and tower stats
-let spriteStats, towerStats
-function loadStatData () {
-    spriteStats = {
-        "drone": {
-            speed: 1,
-            hp: 100,
-            sizeMod: 1.2,
-            image: images.drone
-        },
-        "menace": {
-            speed: 1,
-            hp: 200,
-            sizeMod: 1,
-            image: images.menace
-        }
-    }
-
-    towerStats = {
-        "mcannon": {
-            sizeMod: 1, 
-            range: 180, 
-            firingSpeed: 2000,
-            projectileId: "missile",
-            projectileSpeed: 1.5,
-            projectileSizeMod: 1,
-            projectileDmg: 33.4
-        }
-    }
-}
-
-let zoomMod = 1 // value for how much the screen has scaled up or down.
-// Handles device screen orientation change with fullscreen.
-$(document).ready(function () {
-    $(window).on("orientationchange", function() {
-        if (document.fullscreenElement != null) {
-            let width = window.screen.width,
-                height = window.screen.height,
-                sRatio = width / height,
-                gRatio = 960 / 540,
-                zoom
-
-            if (sRatio < gRatio) 
-                zoom = width / 960
-            else if (sRatio > gRatio) 
-                zoom = height / 540
-            else if (sRatio == gRatio) {
-                width = width * window.devicePixelRatio
-                zoom = width / 960
-            }
-            zoom = zoom.toString()
-
-            container.style.position = "absolute"
-            container.style.top = "50%"
-            container.style.left = "50%"
-            container.style.marginTop = "-270px"
-            container.style.marginLeft = "-480px"
-            container.style.border = "none"
-            container.style.transform = "scale(" + zoom + ")"
-            zoomMod = Number(zoom)
-        }
-    })
-    $(document).on("fullscreenchange", function() {
-        let button = $("#fullscreenButton")
-        if (document.fullscreenElement == null && button.html() == "Exit Fullscreen") {
-            button.html("Fullscreen")
-            container.style.position = "relative"
-            container.style.top = "0"
-            container.style.left = "0"
-            container.style.marginTop = "auto"
-            container.style.marginLeft = "auto"
-            container.style.border = "2px solid rgb(88, 88, 88)"
-            container.style.transform = "scale(1)"
-            zoomMod = 1
-        }
-    })
-})
-
-// Handles fullscreen mode functionality.
-function fullscreenButton() {
-    let checkExit,
-        button = $("#fullscreenButton"),
-        width = window.screen.width,
-        height = window.screen.height,
-        sRatio = width / height,
-        gRatio = 960 / 540,
-        zoom
-
-        if (sRatio < gRatio) 
-            zoom = width / 960
-        else if (sRatio > gRatio) 
-            zoom = height / 540
-        else if (sRatio == gRatio) {
-            width = width * window.devicePixelRatio
-            zoom = width / 960
-        }
-        zoom = zoom.toString()
-    
-
-    if (button.html() == "Fullscreen") {
-        button.html("Exit Fullscreen")
-        $("#screen")[0].requestFullscreen()
-        
-        container.style.position = "absolute"
-        container.style.top = "50%"
-        container.style.left = "50%"
-        container.style.marginTop = "-270px"
-        container.style.marginLeft = "-480px"
-        container.style.border = "none"
-        container.style.transform = "scale(" + zoom + ")"
-        zoomMod = Number(zoom)
-    }
-    else if (button.html() == "Exit Fullscreen") {
-        button.html("Fullscreen")
-        document.exitFullscreen()
-
-        clearInterval(checkExit)
-        container.style.position = "relative"
-        container.style.top = "0"
-        container.style.left = "0"
-        container.style.marginTop = "auto"
-        container.style.marginLeft = "auto"
-        container.style.border = "2px solid rgb(88, 88, 88)"
-        container.style.transform = "scale(1)"
-        zoomMod = 1
-    }
-}
-
-// executes the selected map when play button is pressed.
-let paths = [], towers = [], sprites = [], projectiles = [], playerHP = 10
-function play() {
-    let map = $('#mapPreviewText').html()
-    if (map == "Asteroid Defense") {
-        screenTransition("AsteroidDefense")
-        loadAsteroid()
-    }   
-}
-
-// Pauses game if tabbed out
-let paused = false
-$(document).on("visibilitychange", function() {
-    if (document.visibilityState == 'hidden')
-        paused = true
-    else 
-        paused = false
-})
 
 // Loads sprite path data from Game Data files.
 let pathSmoothingIndex = 15
@@ -351,171 +389,131 @@ function loadPaths (data) {
     }
 }
 
-// test function that runs game.
-function test() {
-    reset()
-    screenTransition("AsteroidDefense")
-    loadAsteroid()
-}
-
-// Resets game related global variables, HTML elements, and intervals.
-let stopRender = false
-function reset () {
-    stopRender = true
-    waveEnded = false
-    startNextWave = false
-    spawned = 0
-
-    clearInterval(spawning)
-    clearInterval(checkFiring)
-    clearInterval(waveRunning)
-    clearInterval(checkPathLoading)
-    clearInterval(checkLoading)
-    clearInterval(waveTimer)
-    let towersLen = towers.length
-    for (let i = 0 ; i < towersLen; i++) 
-        clearInterval(towers[i].firingInterval)
-
-    paths = []
-    towers = []
-    sprites = []
-    projectiles = []
-    playerHP = 10
-    
-    $("#edgeContainer").empty()
-
-    spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
-    towerContext.clearRect(0, 0, towerLayer.width, towerLayer.height)
-    pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
-    projectileContext.clearRect(0, 0, projectileLayer.width, projectileLayer.height)
-}
-
-// Modifies visible DOM elements in between the main menu and game.
-function screenTransition(event) {
-    let string
-    if (event.target == undefined) 
-        string = event
-    else 
-        string = event.target.innerHTML
-
-    loadingScreen.style.display = "block"
-    gameControls.style.display = "none"
-    mapsControls.style.display = "none"
-    settingsControls.style.display = "none"
-    menuControls.style.display = "none"
-    spriteLayer.style.display = "none"
-    towerLayer.style.display = "none"
-    container.style.backgroundImage = "url('Assets/Backgrounds/menu.png')"
-    if (string == "Main Menu") {
-        loadingScreen.style.display = "none"
-        menuControls.style.display = "block"
-        edgeLayer.style.display = "none"
-        reset()
-    }
-    else if (string == "Settings") {
-        loadingScreen.style.display = "none"
-        settingsControls.style.display = "block"
-    }
-        
-    else if (string == "Maps") {
-        loadingScreen.style.display = "none"
-        mapsControls.style.display = "block"
-    }
-    else {
-        gameControls.style.display = "block"
-        spriteLayer.style.display = "block"
-        towerLayer.style.display = "block"
-        container.style.backgroundImage = "url('Assets/Backgrounds/" + string + ".png')"
-    }
-}
-
-// developement tool for creating sprite path data.
-let createdPath = []
-function createPath () {
-    container.style.backgroundImage = "url('Assets/Backgrounds/AsteroidDefense.png')"
-    gameControls.style.display = "none"
-    mapsControls.style.display = "none"
-    settingsControls.style.display = "none"
-    menuControls.style.display = "none"
-
-    spriteLayer.style.pointerEvents = "auto"
-    let mouseDown = false
-    $("#spriteLayer").on("pointermove", function (e) {
-        let position = getMousePos(spriteLayer, e)
-        if (mouseDown) {
-            let lastPositionIndex = createdPath.length - 1
-            createdPath.push({
-                x: position.x, 
-                y: position.y
-            })
-            if (lastPositionIndex >= 0)
-                spriteContext.moveTo(createdPath[lastPositionIndex].x, createdPath[lastPositionIndex].y)
-            spriteContext.lineTo(position.x, position.y)
-            spriteContext.stroke()
+// Is triggered when all image data is loaded to define sprite and tower stats
+let spriteStats, towerStats
+function loadStatData () {
+    spriteStats = {
+        "drone": {
+            speed: 1,
+            hp: 100,
+            sizeMod: 1.2,
+            image: images.drone
+        },
+        "menace": {
+            speed: 1,
+            hp: 200,
+            sizeMod: 1,
+            image: images.menace
         }
-    })
-    $(document).on("pointerdown", function () {
-        mouseDown = true
-    })
-    $(document).on("pointerup", function () {
-        mouseDown = false //BREAK POINT HERE
-        $("#spriteLayer").off("pointermove")
-        $(document).off("pointerdown")
-        $(document).off("pointerup")
-    })
-}
-
-// Deals with javascript radian weirdness.
-function getRadian (dx, dy) {
-    let radian = Math.atan(dy / dx)
-    if (Math.sign(dx) == -1)
-        radian = radian + pi
-    if (radian < 0)
-        radian = radian + twoPi
-    if (isNaN(radian))
-        radian = 0
-    return radian
-}
-
-// Returns mouse position on canvas.
-function getMousePos(canvas, e) {
-    let agentX = e.clientX,
-        agentY = e.clientY
-    if (e.type == "touchstart" || e.type == "touchmove" || e.type == "touchend" || e.type == "touchcancel") {
-        let touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0]
-        agentX = touch.pageX
-        agentY = touch.pageY
     }
 
-    var rect = canvas.getBoundingClientRect(),
-        x = (agentX - (rect.left * zoomMod)) / zoomMod, 
-        y = (agentY - (rect.top * zoomMod)) / zoomMod  
-
-    return {
-        x: x,   
-        y: y
+    towerStats = {
+        "mcannon": {
+            sizeMod: 1, 
+            range: 180, 
+            firingSpeed: 2000,
+            projectileId: "missile",
+            projectileSpeed: 1.5,
+            projectileSizeMod: 1,
+            projectileDmg: 33.4
+        }
     }
 }
 
-// Returns a random number between the parameters.
-function getRandomNum(min, max) {
-    return Math.random() * (max - min) + min;
-}
-function getRandomInt(max) {
-    return Math.floor(Math.random() * max);
+// Waits to load the Asteroid defense map data before firing any code.
+let checkPathLoading
+function loadAsteroid () {
+    let pathsLoaded = false
+    checkPathLoading = setInterval (function() {
+        if (!paused) {
+            if (pathsLoaded) {
+                clearInterval(checkPathLoading)
+                stopRender = false
+                runAsteroid()
+            }
+        }
+    }, 1000)
+    // Load Paths
+    $.get('Assets/GameData/AsteroidDefensePaths.txt', function(data) {
+        loadPaths(data)
+        $("#edgeContainer").load("Assets/GameData/AsteroidDefenseEdges.html", function () {
+            pathsLoaded = true
+        })
+    }, "text")
 }
 
-// Returns a 50/50 boolean.
-function headsOrTails () {
-    return Math.random() < 0.5
+// Begins Asteroid defense sprite spawning.
+let checkFiring, spawnRate = 1500
+function runAsteroid() {
+    edgeLayer.style.display = "block"
+    edgeLayer.style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"
+    playerCredits = 300
+    $("#playerCredits").html(playerCredits)
+
+    // Wave info is formatted as the integer number of sprites, a space, 
+    // then the sprite type followed by a comma to seperate sprites.
+    startWave(wave1, "10 drone", 15)
+
+    function wave1(waveInfo) {
+        for (let i in waveInfo)
+            appendSprite(waveInfo[i], i)
+        startWave(wave2, "5 drone, 5 menace", 60)
+    }
+    function wave2(waveInfo) {
+        for (let i in waveInfo)
+            appendSprite(waveInfo[i], i)
+        startWave(wave3, "10 drone, 5 menace", 60)
+    }
+    function wave3(waveInfo) {
+        for (let i in waveInfo)
+            appendSprite(waveInfo[i], i)
+        startWave(wave4," 10 drone, 10 menace", 60)
+    }
+    function wave4(waveInfo) {
+        for (let i in waveInfo)
+            appendSprite(waveInfo[i], i)
+        startWave("", "", "")
+    }
+
+    checkFiring = setInterval (function () {
+        if (!paused) {
+            let towersLen = towers.length
+            for (let i = 0; i < towersLen; i++) {
+                if (towers[i].firing == true && towers[i].firingInterval == null) {
+                    towers[i].firingInterval = setInterval(function () {
+                        if (!paused) 
+                            appendProjectile(i)
+                    }, towers[i].firingSpeed)
+                }
+                else if (towers[i].firing == false && towers[i].firingInterval != null) {
+                    clearInterval(towers[i].firingInterval)
+                    towers[i].firingInterval = null
+                }
+            }
+        }
+    }, 1000)
+}
+
+// Functions triggers when playerHP reaches 0, informs player of losing and deals with variables and gives,
+// player option to retry or return to menu.
+function playerDead () {
+    paused = true
+    $("#gameOverScreen")[0].style.display = "block"
 }
 
 // handles tower placement and appending tower to towers array.
 let position, pointerActive = false, pointerId
 $(document).ready(function () {
     $("#missileCannon").on("click", function (e) {
-        appendTower(images.mcannon, towerStats["mcannon"].sizeMod, 
-        towerStats["mcannon"].range, towerStats["mcannon"].firingSpeed, "mcannon", e)
+        if (playerCredits - 100 >= 0) {
+            playerCredits = playerCredits - 100
+            appendTower(images.mcannon, towerStats["mcannon"].sizeMod, 
+                towerStats["mcannon"].range, towerStats["mcannon"].firingSpeed, "mcannon", e)
+        }
+        else {
+            // flash credits red
+        }
+        $("#playerCredits").html(playerCredits)
     })
 })
 function appendTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
@@ -722,12 +720,6 @@ function appendSprite (numOfSprites, spriteType) {
     }
 }
 
-// Functions triggers when playerHP reaches 0, informs player of losing and deals with variables and gives,
-// player option to retry or return to menu.
-function playerDead () {
-    reset()
-}
-
 // function that spawns sprites in sprite array.
 function renderSprites() {
     spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
@@ -735,15 +727,24 @@ function renderSprites() {
         let roundedIndex = Math.round(sprites[i].index)
         if ((roundedIndex > paths[sprites[i].path].length - 1) && sprites[i].despawned == false) {
             // Do damage to player
-            $('#' + playerHP + 'hp')[0].style.display = "none"
-            playerHP--
+            if (playerHP > 0) {
+                $('#' + playerHP + 'hp')[0].style.display = "none"
+                playerHP--
+            }
             if (playerHP == 0){
                 playerDead()
                 return
             }
-                
         }
         if ((roundedIndex > paths[sprites[i].path].length - 1) || (sprites[i].hp <= 0) || sprites[i].despawned) {
+            if (sprites[i].hp <= 0 && sprites[i].despawned == false) {
+                if (sprites[i].name == "drone")
+                    playerCredits = playerCredits + 25
+                else if (sprites[i].name == "menace")
+                    playerCredits = playerCredits + 50
+
+                $("#playerCredits").html(playerCredits)
+            }
             sprites[i].despawned = true
             continue
         }
@@ -997,21 +998,31 @@ function startWave (nextWave, rawWaveInfo, timeTillNext) {
     }
 
     waveEnded = false
-    let numOfSprites = sprites.length,
+    let numOfSprites = sprites.length
+        
+    let waveNum, parsedWaveInfo, waveInfoText
+    if (nextWave != "") {
         waveNum = nextWave.name.slice(4),
         parsedWaveInfo = readWaveInfo(rawWaveInfo),
         waveInfoText = ""
-    $('#waveNumber').html(Number(waveNum) - 1)
-    $('#nextWaveNumber').html(waveNum)
-    for (let i in parsedWaveInfo)
-        waveInfoText = waveInfoText + parsedWaveInfo[i] + " " + i + ", "
-    $('#nextWaveSprites').html(waveInfoText.slice(0, waveInfoText.length - 2))
-    let secondsString = (timeTillNext % 60).toString(),
-        zeroInFront = ""
-    if (secondsString.length == 1)
-        zeroInFront = "0"
-    $('#nextWaveTimer').html(Math.trunc(timeTillNext / 60) + "m:" + zeroInFront + secondsString + "s")
-
+        $('#waveNumber').html(Number(waveNum) - 1)
+        $('#nextWaveNumber').html(waveNum)
+        for (let i in parsedWaveInfo)
+            waveInfoText = waveInfoText + parsedWaveInfo[i] + " " + i + ", "
+        $('#nextWaveSprites').html(waveInfoText.slice(0, waveInfoText.length - 2))
+        let secondsString = (timeTillNext % 60).toString(),
+            zeroInFront = ""
+        if (secondsString.length == 1)
+            zeroInFront = "0"
+        $('#nextWaveTimer').html(Math.trunc(timeTillNext / 60) + "m:" + zeroInFront + secondsString + "s")
+    }
+    else {
+        $('#waveNumber').html(Number($('#waveNumber').html()) + 1)
+        $('#nextWaveNumber').html("")
+        $('#nextWaveSprites').html("")
+        $('#nextWaveTimer').html("")
+    }
+    
     loadingScreen.style.display = "none"
 
     render()
@@ -1026,97 +1037,33 @@ function startWave (nextWave, rawWaveInfo, timeTillNext) {
 
     waveTimer = setInterval(function () {
         if (!paused) {
-            timeTillNext--
-            let secondsString = (timeTillNext % 60).toString(),
-                zeroInFront = ""
-            if (secondsString.length == 1)
-                zeroInFront = "0"
-            $('#nextWaveTimer').html(Math.trunc(timeTillNext / 60) + "m:" + zeroInFront + secondsString + "s")
-            if (timeTillNext == 0 || startNextWave) {
+            if (nextWave != "") {
+                timeTillNext--
+                let secondsString = (timeTillNext % 60).toString(),
+                    zeroInFront = ""
+                if (secondsString.length == 1)
+                    zeroInFront = "0"
+                $('#nextWaveTimer').html(Math.trunc(timeTillNext / 60) + "m:" + zeroInFront + secondsString + "s")
+                if (timeTillNext == 0 || startNextWave) {
+                    clearInterval(waveTimer)
+                    startNextWave = false
+                    waveEnded = true
+                    setTimeout(() => {
+                        sprites = []
+                        let projectilesLen = projectiles.length
+                        for (let i = 0; i < projectilesLen; i++) 
+                            projectiles[i].target = false
+                        spawned = 0
+                        nextWave(parsedWaveInfo)
+                    }, 100)
+                }
+            }
+            else {
                 clearInterval(waveTimer)
-                startNextWave = false
-                waveEnded = true
-                setTimeout(() => {
-                    sprites = []
-                    let projectilesLen = projectiles.length
-                    for (let i = 0; i < projectilesLen; i++) 
-                        projectiles[i].target = false
-                    spawned = 0
-                    nextWave(parsedWaveInfo)
-                }, 100)
-            }
-        }
-    }, 1000)
-
-    
-}
-
-// Waits to load the Asteroid defense map data before firing any code.
-let checkPathLoading
-function loadAsteroid () {
-    let pathsLoaded = false
-    checkPathLoading = setInterval (function() {
-        if (!paused) {
-            if (pathsLoaded) {
-                clearInterval(checkPathLoading)
-                stopRender = false
-                runAsteroid()
-            }
-        }
-    }, 1000)
-    // Load Paths
-    $.get('Assets/GameData/AsteroidDefensePaths.txt', function(data) {
-        loadPaths(data)
-        $("#edgeContainer").load("Assets/GameData/AsteroidDefenseEdges.html", function () {
-            pathsLoaded = true
-        })
-    }, "text")
-}
-
-// Begins Asteroid defense sprite spawning.
-let checkFiring, spawnRate = 1500
-function runAsteroid() {
-    edgeLayer.style.display = "block"
-    edgeLayer.style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"
-
-    // Wave info is formatted as the integer number of sprites, a space, 
-    // then the sprite type followed by a comma to seperate sprites.
-    startWave(wave1, "10 drone", 15)
-
-    function wave1(waveInfo) {
-        for (let i in waveInfo)
-            appendSprite(waveInfo[i], i)
-        startWave(wave2, "5 drone, 5 menace", 60)
-    }
-    function wave2(waveInfo) {
-        for (let i in waveInfo)
-            appendSprite(waveInfo[i], i)
-        startWave(wave3, "10 drone, 5 menace", 60)
-    }
-    function wave3(waveInfo) {
-        for (let i in waveInfo)
-            appendSprite(waveInfo[i], i)
-        //startWave(wave4)
-    }
-    function wave4(waveInfo) {
-
-    }
-
-    checkFiring = setInterval (function () {
-        if (!paused) {
-            let towersLen = towers.length
-            for (let i = 0; i < towersLen; i++) {
-                if (towers[i].firing == true && towers[i].firingInterval == null) {
-                    towers[i].firingInterval = setInterval(function () {
-                        if (!paused) 
-                            appendProjectile(i)
-                    }, towers[i].firingSpeed)
-                }
-                else if (towers[i].firing == false && towers[i].firingInterval != null) {
-                    clearInterval(towers[i].firingInterval)
-                    towers[i].firingInterval = null
-                }
             }
         }
     }, 1000)
 }
+
+
+

@@ -72,10 +72,10 @@ button {
     margin: auto;
 }
 .menuButtonsContainer {
+  position: absolute;
   top: 360px;
-  left: 0px;
-  position: relative;
-  width: 100%;
+  left: 380px;
+  width: 200px;
   text-align: center;
 }
 .menuButton {
@@ -141,7 +141,7 @@ a {
 #loadingScreen {
     position: absolute;
     background-color: rgb(78, 78, 78);
-    z-index: 6;
+    z-index: 7;
     width: 100%;
     height: 100%;
     color: white;
@@ -163,4 +163,20 @@ a {
     height: 15px;
     background-color: blue;
     display: block;
+}
+#gameOverButtons {
+    display: grid;
+    position: relative;
+    width: 200px;
+    top: 200px;
+    left: 380px;
+    row-gap: 5px;
+}
+#gameOverScreen {
+    display: none;
+    position: absolute;
+    z-index: 6;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(9, 62, 65, 0.781);
 }
