@@ -137,7 +137,6 @@ function reset () {
 
     clearInterval(spawning)
     clearInterval(checkFiring)
-    clearInterval(waveRunning)
     clearInterval(checkPathLoading)
     clearInterval(checkLoading)
     clearInterval(waveTimer)
@@ -232,7 +231,9 @@ function loading () {
         "test1": new Image(),
         "test2": new Image(),
         "polygon": new Image(),
-        "missile": new Image()
+        "missile": new Image(),
+        "hpBarRed": new Image(),
+        "hpBarGreen": new Image(),
     }
 
     images.drone.src = "Assets/Sprites/drone.png"
@@ -242,6 +243,8 @@ function loading () {
     images.test2.src = "Assets/Sprites/testsprite2.png"
     images.polygon.src = "Assets/Sprites/polygon.png"
     images.missile.src = "Assets/Sprites/missile.png"
+    images.hpBarRed.src = "Assets/Backgrounds/hpBarRed.png"
+    images.hpBarGreen.src = "Assets/Backgrounds/hpBarGreen.png"
     
     let boolArray = []
     for (let i in images) 
@@ -255,6 +258,8 @@ function loading () {
     images.test2.onload = function () {boolArray[4].bool = true}
     images.polygon.onload = function () {boolArray[5].bool = true}
     images.missile.onload = function () {boolArray[6].bool = true}
+    images.hpBarRed.onload = function () {boolArray[7].bool = true}
+    images.hpBarGreen.onload = function () {boolArray[8].bool = true}
 
     checkLoading = setInterval (function () {
         if (!paused) {
@@ -394,13 +399,13 @@ let spriteStats, towerStats
 function loadStatData () {
     spriteStats = {
         "drone": {
-            speed: 1,
+            speed: 0.6,
             hp: 100,
             sizeMod: 1.2,
             image: images.drone
         },
         "menace": {
-            speed: 1,
+            speed: 0.5,
             hp: 200,
             sizeMod: 1,
             image: images.menace
@@ -409,6 +414,7 @@ function loadStatData () {
 
     towerStats = {
         "mcannon": {
+            turnSpeed: twoDeg,
             sizeMod: 1, 
             range: 180, 
             firingSpeed: 2000,
@@ -452,22 +458,22 @@ function runAsteroid() {
 
     // Wave info is formatted as the integer number of sprites, a space, 
     // then the sprite type followed by a comma to seperate sprites.
-    startWave(wave1, "10 drone", 15)
+    startWave(wave1, "10 drone", 30)
 
     function wave1(waveInfo) {
         for (let i in waveInfo)
             appendSprite(waveInfo[i], i)
-        startWave(wave2, "5 drone, 5 menace", 60)
+        startWave(wave2, "5 drone, 5 menace", 80)
     }
     function wave2(waveInfo) {
         for (let i in waveInfo)
             appendSprite(waveInfo[i], i)
-        startWave(wave3, "10 drone, 5 menace", 60)
+        startWave(wave3, "10 drone, 5 menace", 100)
     }
     function wave3(waveInfo) {
         for (let i in waveInfo)
             appendSprite(waveInfo[i], i)
-        startWave(wave4," 10 drone, 10 menace", 60)
+        startWave(wave4," 10 drone, 10 menace", 100)
     }
     function wave4(waveInfo) {
         for (let i in waveInfo)
@@ -505,18 +511,12 @@ function playerDead () {
 let position, pointerActive = false, pointerId
 $(document).ready(function () {
     $("#missileCannon").on("click", function (e) {
-        if (playerCredits - 100 >= 0) {
-            playerCredits = playerCredits - 100
-            appendTower(images.mcannon, towerStats["mcannon"].sizeMod, 
-                towerStats["mcannon"].range, towerStats["mcannon"].firingSpeed, "mcannon", e)
-        }
-        else {
-            // flash credits red
-        }
-        $("#playerCredits").html(playerCredits)
+        appendTower(images.mcannon, towerStats["mcannon"].sizeMod, 
+            towerStats["mcannon"].range, towerStats["mcannon"].firingSpeed,
+            "mcannon", towerStats["mcannon"].turnSpeed, e)
     })
 })
-function appendTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
+function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, e) {
     pointerId = id
     let posX, posY
     pointerLayer.style.pointerEvents = "auto"
@@ -526,6 +526,49 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
         $(this)[0].style.pointerEvents = "auto"
         $(this)[0].style.touchAction = "auto"
     })
+
+    function append () {
+        removeEvents()
+        pointerActive = false
+        let towersLen = towers.length
+        // Doesn't allow for towers to be placed over one another
+        for (let i = 0; i < towersLen; i++) {
+            if ((towers[i].x + (towers[i].width / 2)) >= (posX - (imageSrc.width * sizeMod / 2)) 
+            && (towers[i].x - (towers[i].width / 2)) <= (posX + (imageSrc.width * sizeMod / 2)) 
+            && (towers[i].y + (towers[i].height / 2)) >= (posY - (imageSrc.height * sizeMod / 2)) 
+            && (towers[i].y - (towers[i].height / 2)) <= (posY + (imageSrc.height * sizeMod / 2))) {
+                // Some animation or indicator
+                return
+            }
+        }
+
+        if (playerCredits - 100 >= 0) {
+            playerCredits = playerCredits - 100
+            $("#playerCredits").html(playerCredits)
+            towers.push({
+                x: posX,
+                y: posY,
+                turnSpeed: turnSpeed,
+                image: imageSrc,
+                width: imageSrc.width * sizeMod,
+                height: imageSrc.height * sizeMod,
+                range: range,
+                id: id,
+                radian: (3 * pi / 2),
+                gTurn: false,
+                direction: 0,
+                sRadian: 0,
+                sIndex: -1,
+                firingSpeed: firingSpeed,
+                firing: false,
+                firingInterval: null
+            })
+        }
+        else {
+            return
+            //flash credits red
+        }
+    }
 
     function updateMousePos (e) {
         position = getMousePos(pointerLayer, e)
@@ -587,41 +630,10 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
         touchAction(e)
     })
     $(".edge").on("touchend", function () {
-        removeEvents()
-        pointerActive = false
         $('[class="edge"').each(function () {
             $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
         })
-
-        let towersLen = towers.length
-        // Doesn't allow for towers to be placed over one another
-        for (let i = 0; i < towersLen; i++) {
-            if ((towers[i].x + (towers[i].width / 2)) >= (posX - (imageSrc.width * sizeMod / 2)) 
-            && (towers[i].x - (towers[i].width / 2)) <= (posX + (imageSrc.width * sizeMod / 2)) 
-            && (towers[i].y + (towers[i].height / 2)) >= (posY - (imageSrc.height * sizeMod / 2)) 
-            && (towers[i].y - (towers[i].height / 2)) <= (posY + (imageSrc.height * sizeMod / 2))) {
-                // Some animation or indicator
-                return
-            }
-        }
-
-        towers.push({
-            x: posX,
-            y: posY,
-            image: imageSrc,
-            width: imageSrc.width * sizeMod,
-            height: imageSrc.height * sizeMod,
-            range: range,
-            id: id,
-            radian: (3 * pi / 2),
-            gTurn: false,
-            direction: 0,
-            sRadian: 0,
-            sIndex: -1,
-            firingSpeed: firingSpeed,
-            firing: false,
-            firingInterval: null
-        })
+        append()
     })
 
     $("#void").on("pointerup touchend", function () {
@@ -641,37 +653,7 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, e) {
         pointerLayer.style.touchAction = "none"
     })
     $(".edge").on("pointerup", function () {
-        removeEvents()
-        pointerActive = false
-        let towersLen = towers.length
-        // Doesn't allow for towers to be placed over one another
-        for (let i = 0; i < towersLen; i++) {
-            if ((towers[i].x + (towers[i].width / 2)) >= (posX - (imageSrc.width * sizeMod / 2)) 
-            && (towers[i].x - (towers[i].width / 2)) <= (posX + (imageSrc.width * sizeMod / 2)) 
-            && (towers[i].y + (towers[i].height / 2)) >= (posY - (imageSrc.height * sizeMod / 2)) 
-            && (towers[i].y - (towers[i].height / 2)) <= (posY + (imageSrc.height * sizeMod / 2))) {
-                // Some animation or indicator
-                return
-            }
-        }
-
-        towers.push({
-            x: posX,
-            y: posY,
-            image: imageSrc,
-            width: imageSrc.width * sizeMod,
-            height: imageSrc.height * sizeMod,
-            range: range,
-            id: id,
-            radian: (3 * pi / 2),
-            gTurn: false,
-            direction: 0,
-            sRadian: 0,
-            sIndex: null,
-            firingSpeed: firingSpeed,
-            firing: false,
-            firingInterval: null
-        })
+        append()
     })
 }
 
@@ -699,8 +681,8 @@ function appendProjectile (towerIndex) {
 }
 
 // function that appends sprites object to sprites array
-function appendSprite (numOfSprites, spriteType) {
-    for (let i = 0; i < numOfSprites; i++) {
+function appendSprite (spriteQuantity, spriteType) {
+    for (let i = 0; i < spriteQuantity; i++) {
         let sizeMod = spriteStats[spriteType].sizeMod,
             image = spriteStats[spriteType].image
             
@@ -754,9 +736,25 @@ function renderSprites() {
         spriteContext.rotate(paths[sprites[i].path][roundedIndex].r)
         spriteContext.drawImage(sprites[i].image, (-sprites[i].width / 2), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
         spriteContext.restore()
+
+        spriteContext.save()
+        spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
+        let fullHP = spriteStats[sprites[i].name].hp
+        if (sprites[i].hp < fullHP) {
+            spriteContext.drawImage(images.hpBarRed, 0, 0, images.hpBarRed.width, images.hpBarRed.height, 
+                (-sprites[i].width / 2), ((-sprites[i].height / 2) + 20), (images.hpBarRed.width / 5) , (images.hpBarRed.height / 5))
+
+            let croppedHPBarDimensions = images.hpBarGreen.width * (sprites[i].hp / fullHP)
+
+            spriteContext.drawImage(images.hpBarGreen, 0, 0, croppedHPBarDimensions, images.hpBarGreen.height, 
+                                    (-sprites[i].width / 2), ((-sprites[i].height / 2) + 20), (croppedHPBarDimensions / 5), 
+                                    (images.hpBarGreen.height / 5))
+        }
+        spriteContext.restore()
+
         sprites[i].x = paths[sprites[i].path][roundedIndex].x
         sprites[i].y = paths[sprites[i].path][roundedIndex].y
-        sprites[i].index = sprites[i].index + sprites[i].speed
+        sprites[i].index = sprites[i].index + (sprites[i].speed * timeMultiplier)
     }
 }
 
@@ -804,7 +802,7 @@ function renderTowers() {
 
             let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
             if (dTheta > tenDeg) {
-                towers[i].radian = towers[i].radian + (towers[i].direction * twoDeg)
+                towers[i].radian = towers[i].radian + (towers[i].direction * towers[i].turnSpeed * timeMultiplier)
                 if (towers[i].radian < 0)
                     towers[i].radian = towers[i].radian + twoPi
                 else if (towers[i].radian > twoPi)
@@ -880,8 +878,8 @@ function renderProjectiles() {
                                         projectiles[i].width, projectiles[i].height)
             projectileContext.restore()
 
-            let xTheta = Math.cos(projectiles[i].radian) * projectiles[i].speed,
-                yTheta = Math.sin(projectiles[i].radian) * projectiles[i].speed
+            let xTheta = Math.cos(projectiles[i].radian) * projectiles[i].speed * timeMultiplier,
+                yTheta = Math.sin(projectiles[i].radian) * projectiles[i].speed * timeMultiplier
 
             projectiles[i].x = px + xTheta
             projectiles[i].y = py + yTheta
@@ -902,8 +900,8 @@ function renderProjectiles() {
                                     projectiles[i].width, projectiles[i].height)
         projectileContext.restore()
 
-        let xTheta = Math.cos(radian) * projectiles[i].speed,
-            yTheta = Math.sin(radian) * projectiles[i].speed
+        let xTheta = Math.cos(radian) * projectiles[i].speed * timeMultiplier,
+            yTheta = Math.sin(radian) * projectiles[i].speed * timeMultiplier
 
         projectiles[i].x = px + xTheta
         projectiles[i].y = py + yTheta
@@ -941,16 +939,21 @@ function renderProjectiles() {
 }
 
 // The actual animation frame function for rendering all sprites, towers, and projectiles.
+let deltaTime = 0,
+    time = new Date().getTime(),
+    timeMultiplier = 1
 function render() {
+    let now = new Date().getTime()
+    deltaTime = now - time
+    timeMultiplier = deltaTime / 16.667
+    time = now
     renderSprites()
     renderPointers()
     renderTowers()
     renderProjectiles()
 
     if (stopRender == false && waveEnded == false) {
-        setTimeout(() => {
-            requestAnimationFrame(render)
-        }, 17)
+        requestAnimationFrame(render)
     }
 }
 
@@ -970,27 +973,27 @@ function startNextWaveButton () {
 // Starts spawning the sprites in the sprite array, and Checks if wave is over, then it clears the sprites array.
 // This function is passed information about the next wave and initiates the next wave once the current wave is over.
 // Takes argument variable with amount of seconds in integer form until the next wave and waits to render the next wave.
-let spawning, waveRunning, spawned = 0, waveEnded = false,
-    waveTimer
+let spawning, spawned = 0, waveEnded = false,
+    waveTimer, numOfSprites
 function startWave (nextWave, rawWaveInfo, timeTillNext) {
     // Reads sprite array to pass the next wave information to DOM.
     function readWaveInfo (rawWaveInfo) {
         let rawWaveInfoLen = rawWaveInfo.length,
             waveInfo = {},
-            numOfSprites = "",
+            spriteQuantity = "",
             spriteType = ""
         for (let i = 0; i < rawWaveInfoLen; i++) {
             if (rawWaveInfo[i] == "," || i == (rawWaveInfoLen - 1)) {
                 if (i == (rawWaveInfoLen - 1))
                     spriteType = spriteType + rawWaveInfo[i]
-                waveInfo[spriteType] = Number(numOfSprites)
+                waveInfo[spriteType] = Number(spriteQuantity)
                 spriteType = ""
-                numOfSprites = ""
+                spriteQuantity = ""
             }
             else if (rawWaveInfo[i] == " ") 
                 continue
             else if (isNaN(rawWaveInfo[i]) == false)
-                numOfSprites = numOfSprites + rawWaveInfo[i]
+                spriteQuantity = spriteQuantity + rawWaveInfo[i]
             else
                 spriteType = spriteType + rawWaveInfo[i]
         }
@@ -998,7 +1001,7 @@ function startWave (nextWave, rawWaveInfo, timeTillNext) {
     }
 
     waveEnded = false
-    let numOfSprites = sprites.length
+    numOfSprites = sprites.length
         
     let waveNum, parsedWaveInfo, waveInfoText
     if (nextWave != "") {
