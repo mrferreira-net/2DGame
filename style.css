@@ -107,16 +107,13 @@ button {
     width: auto;
     height: auto;
 }
-#fullscreenButton {
-    position: relative;
-    justify-self: center;
-    z-index: inherit;
-}
 #gamePanel {
     position: absolute;
+    width: 960px;
+    height: 540px;
     color: white;
-    bottom: 10px;
-    right: 10px;
+    left: 0;
+    top: 0;
     z-index: 4;
     font-size: 15px;
 }

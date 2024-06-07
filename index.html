@@ -101,7 +101,8 @@
                 </menu>
     
                 <menu id="gameControls">
-                    <div style="z-index: inherit;
+                    <div style="
+                    z-index: inherit;
                     width: 190px; 
                     height: 460px;
                     bottom: 0px;
@@ -114,7 +115,8 @@
                     border-top-right-radius: 0%;
                     pointer-events: none;
                     touch-action: none;"></div>
-                    <div style="z-index: inherit;
+                    <div style="
+                    z-index: inherit;
                     width: 350px;
                     height: 100px;
                     bottom: 0px;
@@ -127,14 +129,153 @@
                     border-bottom-left-radius: 0%;
                     pointer-events: none;
                     touch-action: none;"></div>
-                    
-                    <button id="backToMenu" class="gameButton" onclick="screenTransition(event)">Main Menu</button>
+
                     <div id="gamePanel">
-                        <h6 style="position: absolute; bottom: 420px; right: 50px">
+                        <h6 style="position: absolute; bottom: 430px; right: 60px">
                             - Towers -
                         </h6>
+    
+                        <div name="gameInfo" style="display: flex; position: absolute; bottom: 10px; right: 190px;">
+                            <div name="playerInfo" style="
+                            background-color: rgba(0, 247, 255, 0.452);
+                            color: white;
+                            border-style: groove;
+                            border-color: rgb(161, 241, 255);
+                            position: relative;
+                            width: 137px;
+                            height: 85px;">
+                                
+                                <h6 style="position: absolute; left: 40px;">
+                                    Health
+                                </h6>
+                                <div name="playerHealth" style="display: flex; 
+                                    column-gap: 2px; 
+                                    position: absolute;
+                                    top: 22px;
+                                    left: 6px;">
+                                    
+                                    <div id="1hp" class="healthSquare" style="background-color: rgb(255, 81, 0);">
+                                    </div>
+        
+                                    <div id="2hp" class="healthSquare" style="background-color: rgb(255, 123, 0);">
+                                    </div>
+        
+                                    <div id="3hp" class="healthSquare" style="background-color: rgb(255, 187, 0);">
+                                    </div>
+        
+                                    <div id="4hp" class="healthSquare" style="background-color: rgb(255, 251, 0);">
+                                    </div>
+        
+                                    <div id="5hp" class="healthSquare" style="background-color: rgb(200, 255, 0);">
+                                    </div>
+        
+                                    <div id="6hp" class="healthSquare" style="background-color: rgb(145, 255, 0);">
+                                    </div>
+        
+                                    <div id="7hp" class="healthSquare" style="background-color: rgb(81, 255, 0);">
+                                    </div>
+        
+                                    <div id="8hp" class="healthSquare" style="background-color: rgb(9, 255, 0);">
+                                    </div>
+        
+                                    <div id="9hp" class="healthSquare" style="background-color: rgb(0, 255, 0);">
+                                    </div>
+        
+                                    <div id="10hp" class="healthSquare" style="background-color: rgb(0, 255, 64);">
+                                    </div>
+                                </div>
+        
+                                <h6 style="position: absolute; left: 40px; top: 38px;">
+                                    Credits
+                                </h6>
+                                <div name="playerCredits" style="
+                                display: flex;
+                                position: absolute;
+                                top: 58px;
+                                left: 40px;">
+                                    <img src="Assets/Backgrounds/coin.png" style="position: relative; width: 14px; height: 18px; top: 1px;"> 
+                                    <h6 id="playerCredits" style="position: relative; left: 5px; color: rgb(163, 255, 247);">
+                                        0
+                                    </h6>
+                                </div>
+                            </div>
+    
+                            <div name="waveInfo" style="
+                                background-color: rgba(0, 247, 255, 0.452);
+                                color: rgb(161, 241, 255);
+                                border-style: groove;
+                                border-color: rgb(161, 241, 255);
+                                position: relative;
+                                bottom: 0;
+                                right: 0;
+                                width: 210px;
+                                height: 85px;">
+    
+                                <h6 style="
+                                    color: white;
+                                    position: absolute;
+                                    font-size: small;
+                                    left: 5px;
+                                    top: 17px;">
+                                    Next Wave:
+                                </h6>
+    
+                                <h6 id="nextWaveNumber" style="
+                                    color: rgb(255, 238, 0);
+                                    position: absolute;
+                                    font-size: small;
+                                    top: 17px;
+                                    left:  77px;">
+                                    1
+                                </h6>
+                                
+                                <div id="nextWaveSprites" style="
+                                    position: absolute;
+                                    left: 5px;
+                                    top: 30px;
+                                    inline-size: 310px;
+                                    overflow-wrap: break-word;
+                                    overflow-y: hidden;
+                                    height: 40px">
+                                    ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, 
+                                    ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, 
+                                    ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, 
+                                </div>
+    
+                                <h6 style="
+                                    color: white;
+                                    position: absolute;
+                                    right: 55px;
+                                    font-size: small;
+                                    top: 17px;">
+                                    Starts in:
+                                </h6>
+    
+                                <h6 id="nextWaveTimer" style="
+                                    color: rgb(238, 255, 0);
+                                    position: absolute;
+                                    right: 5px;
+                                    font-size: small;
+                                    top: 17px;">
+                                    0m:00s
+                                </h6>
+    
+                                <h6 style="color: white; position: absolute; top: 0px; left: 62px; display: flex;">
+                                    Wave:
+                                    <div id="waveNumber" style="position: relative; left: 5px; color: aqua;">
+                                        0
+                                    </div>
+                                    <div id="totalWaves" style="position: relative; left: 6px; color: aqua;">/4</div>
+                                </h6>
+                            </div>
+                        </div>
 
-                        <div name="gameButtons" style="display: grid; row-gap: 5px; position: relative; top: 5px;">
+                        <div name="gameButtons" style="
+                        display: grid; 
+                        row-gap: 5px; 
+                        position: absolute; 
+                        bottom: 10px; 
+                        right: 13px;">
                             <button id="missileCannon" class="gameButton">
                                 <img src="Assets/Sprites/testsprite1.png" alt="">
     
@@ -186,7 +327,7 @@
                                     000
                                 </div> 
                             </button>
-    
+
                             <button id="" class="gameButton">
                                 <img src="Assets/Sprites/testsprite1.png" alt="">
     
@@ -199,154 +340,25 @@
                                     000
                                 </div> 
                             </button>
+
+                            <div>
+                                <button id="sellTower" style="height: 45px; width: 83px;">
+                                    <img src="Assets/Backgrounds/coin.png">
+                                    Sell 
+                                </button>
+
+                                <button style="height: 45px; width: 83px;">
+                                    Towers ->
+                                </button>
+                            </div>
     
-                            <button id="" class="gameButton">
-                                <img src="Assets/Sprites/testsprite1.png" alt="">
-    
-                                <div style="position: absolute; left: 60px; top: 8px;">
-                                    Not Applicable
-                                </div>
-        
-                                <img src="Assets/Backgrounds/coin.png" style="position: absolute; width: 14px; bottom: 4px; left: 65px;"> 
-                                <div style="font-size: medium; position: absolute; width: 14px; bottom: 2px; left: 80px; color: white;">
-                                    000
-                                </div> 
-                            </button>
-    
-                            <button style="height: 35px; width: 170px;" onclick="startNextWaveButton()">
+                            <button style="height: 45px; width: 170px; position: relative;" onclick="startNextWaveButton()">
                                 Start Next Wave >>
                             </button>
                         </div>
-
-                        <div name="playerInfo" style="
-                            background-color: rgba(0, 247, 255, 0.452);
-                            color: white;
-                            border-style: groove;
-                            border-color: rgb(161, 241, 255);
-                            position: absolute;
-                            top: 345px;
-                            right: 175px;
-                            width: 137px;
-                            height: 85px;">
-                            <h6 style="position: absolute; left: 40px;">
-                                Health
-                            </h6>
-                            <div name="playerHealth" style="display: flex; 
-                                column-gap: 2px; 
-                                position: absolute; 
-                                top: 20px; 
-                                left: 7px;">
-                                <div id="1hp" class="healthSquare" style="background-color: rgb(255, 81, 0);">
-                                </div>
-
-                                <div id="2hp" class="healthSquare" style="background-color: rgb(255, 123, 0);">
-                                </div>
-
-                                <div id="3hp" class="healthSquare" style="background-color: rgb(255, 187, 0);">
-                                </div>
-
-                                <div id="4hp" class="healthSquare" style="background-color: rgb(255, 251, 0);">
-                                </div>
-
-                                <div id="5hp" class="healthSquare" style="background-color: rgb(200, 255, 0);">
-                                </div>
-
-                                <div id="6hp" class="healthSquare" style="background-color: rgb(145, 255, 0);">
-                                </div>
-
-                                <div id="7hp" class="healthSquare" style="background-color: rgb(81, 255, 0);">
-                                </div>
-
-                                <div id="8hp" class="healthSquare" style="background-color: rgb(9, 255, 0);">
-                                </div>
-
-                                <div id="9hp" class="healthSquare" style="background-color: rgb(0, 255, 0);">
-                                </div>
-
-                                <div id="10hp" class="healthSquare" style="background-color: rgb(0, 255, 64);">
-                                </div>
-                            </div>
-
-                            <h6 style="position: absolute; left: 40px; top: 35px;">
-                                Credits
-                            </h6>
-                            <div name="playerCredits" style="display: flex; position: absolute; top: 55px; left: 40px;">
-                                <img src="Assets/Backgrounds/coin.png" style="position: relative; width: 14px; height: 18px; top: 1px;"> 
-                                <h6 id="playerCredits" style="position: relative; left: 5px; color: rgb(163, 255, 247);">
-                                    0
-                                </h6>
-                            </div>
-                        </div>
-
-                        <div name="waveInfo" style="
-                            background-color: rgba(0, 247, 255, 0.452);
-                            color: rgb(161, 241, 255);
-                            border-style: groove;
-                            border-color: rgb(161, 241, 255);
-                            position: absolute;
-                            top: 345px;
-                            right: 310px;
-                            width: 210px;
-                            height: 85px;">
-
-                            <h6 style="
-                                color: white;
-                                position: absolute;
-                                font-size: small;
-                                left: 5px;
-                                top: 17px;">
-                                Next Wave:
-                            </h6>
-
-                            <h6 id="nextWaveNumber" style="
-                                color: rgb(255, 238, 0);
-                                position: absolute;
-                                font-size: small;
-                                top: 17px;
-                                left:  77px;">
-                                1
-                            </h6>
-                            
-                            <div id="nextWaveSprites" style="
-                                position: absolute;
-                                left: 5px;
-                                top: 30px;
-                                inline-size: 310px;
-                                overflow-wrap: break-word;
-                                overflow-y: hidden;
-                                height: 40px">
-                                ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, 
-                                ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, 
-                                ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, ENEMY UNITS, 
-                            </div>
-
-                            <h6 style="
-                                color: white;
-                                position: absolute;
-                                right: 55px;
-                                font-size: small;
-                                top: 17px;">
-                                Starts in:
-                            </h6>
-
-                            <h6 id="nextWaveTimer" style="
-                                color: rgb(238, 255, 0);
-                                position: absolute;
-                                right: 5px;
-                                font-size: small;
-                                top: 17px;">
-                                0m:00s
-                            </h6>
-
-                            <h6 style="color: white; position: absolute; top: 0px; left: 62px; display: flex;">
-                                Wave:
-                                <div id="waveNumber" style="position: relative; left: 5px; color: aqua;">
-                                    0
-                                </div>
-                                <div id="totalWaves" style="position: relative; left: 6px; color: aqua;">/4</div>
-                            </h6>
-                        </div>
                     </div>
+
+                    <button id="backToMenu" class="gameButton" onclick="screenTransition(event)">Main Menu</button>
                 </menu>
     
                 <menu id="mapsControls">

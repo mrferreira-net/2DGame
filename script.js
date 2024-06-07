@@ -89,7 +89,7 @@ function headsOrTails () {
 // Waits for document to be ready before grabbing DOM stuff.
 let spriteLayer, spriteContext, towerLayer, towerContext, pointerLayer, pointerContext, projectileLayer,
     projectileContext, edgeLayer, container, gameControls, mapsControls, settingsControls, menuControls,
-    loadingScreen, body
+    loadingScreen, body, gamePanel
 $(document).ready(function () {
     spriteLayer = $('#spriteLayer')[0]
     spriteContext = spriteLayer.getContext("2d")
@@ -107,6 +107,7 @@ $(document).ready(function () {
     menuControls = $('#menuControls')[0]
     loadingScreen =  $("#loadingScreen")[0]
     body = $('#body')[0]
+    gamePanel = $('#gamePanel')[0]
 
     spriteContext.imageSmoothingEnabled = false
     spriteContext.lineWidth = 0.1
@@ -217,8 +218,10 @@ let paused = false
 $(document).on("visibilitychange", function() {
     if (document.visibilityState == 'hidden')
         paused = true
-    else 
+    else {
         paused = false
+        time = new Date().getTime()
+    }  
 })
 
 // Loads all images into image object before user can use the program.
@@ -234,6 +237,7 @@ function loading () {
         "missile": new Image(),
         "hpBarRed": new Image(),
         "hpBarGreen": new Image(),
+        "coin" : new Image()
     }
 
     images.drone.src = "Assets/Sprites/drone.png"
@@ -245,32 +249,24 @@ function loading () {
     images.missile.src = "Assets/Sprites/missile.png"
     images.hpBarRed.src = "Assets/Backgrounds/hpBarRed.png"
     images.hpBarGreen.src = "Assets/Backgrounds/hpBarGreen.png"
+    images.coin.src = "Assets/Backgrounds/coin.png"
     
-    let boolArray = []
-    for (let i in images) 
-        boolArray.push({bool:false})
-    let boolArrayLen = boolArray.length
-
-    images.drone.onload = function () {boolArray[0].bool = true}
-    images.mcannon.onload = function () {boolArray[1].bool = true}
-    images.menace.onload = function () {boolArray[2].bool = true}
-    images.test1.onload = function () {boolArray[3].bool = true}
-    images.test2.onload = function () {boolArray[4].bool = true}
-    images.polygon.onload = function () {boolArray[5].bool = true}
-    images.missile.onload = function () {boolArray[6].bool = true}
-    images.hpBarRed.onload = function () {boolArray[7].bool = true}
-    images.hpBarGreen.onload = function () {boolArray[8].bool = true}
+    let boolArray = {}
+    for (let i in images) {
+        boolArray[i] = false
+        images[i].onload = function () {boolArray[i] = true}
+    }
 
     checkLoading = setInterval (function () {
         if (!paused) {
-            for (let i = 0; i < boolArrayLen; i++) {
-                if (boolArray[i].bool == false)
+            for (let i in boolArray) {
+                if (boolArray[i] == false)
                     return
             }
             clearInterval(checkLoading)
             loadingScreen.style.display = "none"
             loadStatData()
-            //test() // temporary
+            test() // temporary
         }
     }, 1000)
 }
@@ -508,7 +504,6 @@ function playerDead () {
 }
 
 // handles tower placement and appending tower to towers array.
-let position, pointerActive = false, pointerId
 $(document).ready(function () {
     $("#missileCannon").on("click", function (e) {
         appendTower(images.mcannon, towerStats["mcannon"].sizeMod, 
@@ -521,6 +516,8 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, e) {
     let posX, posY
     pointerLayer.style.pointerEvents = "auto"
     pointerLayer.style.touchAction = "auto"
+    gamePanel.style.pointerEvents = "none"
+    gamePanel.style.touchAction = "none"
     $('[class="edge"').each(function () {
         $(this)[0].style.backgroundColor = "rgba(0, 255, 149, 0.315)"
         $(this)[0].style.pointerEvents = "auto"
@@ -529,7 +526,6 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, e) {
 
     function append () {
         removeEvents()
-        pointerActive = false
         let towersLen = towers.length
         // Doesn't allow for towers to be placed over one another
         for (let i = 0; i < towersLen; i++) {
@@ -579,6 +575,7 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, e) {
     updateMousePos(e)
 
     function removeEvents () {
+        pointerActive = false
         $("#pointerLayer").off("touchstart")
         $("#pointerLayer").off("touchmove")
         $("#pointerLayer").off("touchend")
@@ -597,6 +594,9 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, e) {
             $(this)[0].style.touchAction = "none"
             $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
         })
+
+        gamePanel.style.pointerEvents = "auto"
+        gamePanel.style.touchAction = "auto"
     }
 
     function touchAction (e) {
@@ -630,20 +630,16 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, e) {
         touchAction(e)
     })
     $(".edge").on("touchend", function () {
-        $('[class="edge"').each(function () {
-            $(this)[0].style.backgroundColor = "rgba(0, 0, 0, 0)"
-        })
         append()
     })
 
     $("#void").on("pointerup touchend", function () {
         removeEvents()
-        pointerActive = false
     })
     $(".gameButton").on("pointerup touchend", function () {
         removeEvents()
-        pointerActive = false
     })
+
     
     $("#pointerLayer").on("pointermove", function (e) {
         pointerAction(e)
@@ -758,20 +754,29 @@ function renderSprites() {
     }
 }
 
-// function that renders tower placement
+// function that renders tower placement and selling cursor
+let position, pointerActive = false, pointerId
 function renderPointers() {
     if (pointerActive) {
         let imageSrc = images[pointerId]
         pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
-        pointerContext.beginPath();
-        pointerContext.arc(position.x, position.y, towerStats[pointerId].range, 0, 2 * pi);
-        pointerContext.fill()
-        pointerContext.stroke();
-        pointerContext.save()
-        pointerContext.translate(position.x, position.y)
-        pointerContext.rotate(3 * pi / 2)
-        pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
-        pointerContext.restore()
+        if (pointerId == "coin") {
+            pointerContext.save()
+            pointerContext.translate(position.x, position.y)
+            pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
+            pointerContext.restore()
+        }
+        else {
+            pointerContext.beginPath();
+            pointerContext.arc(position.x, position.y, towerStats[pointerId].range, 0, 2 * pi);
+            pointerContext.fill()
+            pointerContext.stroke();
+            pointerContext.save()
+            pointerContext.translate(position.x, position.y)
+            pointerContext.rotate(3 * pi / 2)
+            pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
+            pointerContext.restore()
+        }
     }
     else
         pointerContext.clearRect(0, 0, pointerLayer.width, pointerLayer.height)
@@ -964,11 +969,110 @@ function startNextWaveButton () {
     for (let i = 0; i < spritesLen; i++) {
         if (sprites[i].despawned == false) {
             alert("Cannot start next wave until there are no enemy units in the current wave.")
+            time = new Date().getTime()
             return
         }
     }
     startNextWave = true
 }
+
+// Sell tower functionality
+$(document).ready(function () {
+    $("#sellTower").on("click", function (e) {
+        pointerId = "coin"
+        
+        let posX, posY
+        pointerLayer.style.pointerEvents = "auto"
+        pointerLayer.style.touchAction = "auto"
+        gamePanel.style.pointerEvents = "none"
+        gamePanel.style.touchAction = "none"
+
+        function sell() {
+            let towersLen = towers.length,
+                towerSold = false
+            // Checks if clicking on tower
+            for (let i = 0; i < towersLen; i++) {
+                if ((towers[i].x + (towers[i].width / 2)) >= (posX - (images["coin"].width / 2)) 
+                && (towers[i].x - (towers[i].width / 2)) <= (posX + (images["coin"].width / 2)) 
+                && (towers[i].y + (towers[i].height / 2)) >= (posY - (images["coin"].height / 2)) 
+                && (towers[i].y - (towers[i].height / 2)) <= (posY + (images["coin"].height / 2))) {
+                    //sell tower
+                    towerSold = true
+                }
+            }
+
+            if (towerSold) {
+                pointerLayer.style.pointerEvents = "auto"
+                pointerLayer.style.touchAction = "auto"
+            }
+            else
+                removeEvents()
+        }
+
+        function updateMousePos (e) {
+            position = getMousePos(pointerLayer, e)
+            pointerActive = true
+            posX = position.x - (images["coin"].width / 2)
+            posY = position.y - (images["coin"].height / 2)
+        }
+        updateMousePos(e)
+
+        function removeEvents () {
+            pointerActive = false
+            $("#pointerLayer").off("touchstart")
+            $("#pointerLayer").off("touchmove")
+            $("#pointerLayer").off("touchend")
+    
+            $("#pointerLayer").off("pointermove")
+            $("#pointerLayer").off("pointerdown")
+    
+            $("#void").off("pointerup touchend")
+            $(".gameButton").off("pointerup touchend")
+    
+            gamePanel.style.pointerEvents = "auto"
+            gamePanel.style.touchAction = "auto"
+        }
+    
+        function touchAction (e) {
+            updateMousePos(e)
+            $("#pointerLayer").off("pointerdown")
+            $("#pointerLayer").off("pointermove")
+        }
+    
+        function pointerAction (e) {
+            updateMousePos(e)
+            $("#pointerLayer").off("touchstart")
+            $("#pointerLayer").off("touchmove")
+            $("#pointerLayer").off("touchend")
+        }
+    
+        $("#pointerLayer").on("touchstart", function (e) {
+            touchAction(e)
+        })
+        $("#pointerLayer").on("touchmove", function (e) {
+            touchAction(e)
+        })
+        $("#pointerLayer").on("touchend", function () {
+            pointerLayer.style.pointerEvents = "none"
+            pointerLayer.style.touchAction = "none"
+        })
+    
+        $("#void").on("pointerup touchend", function () {
+            sell()
+        })
+        $(".gameButton").on("pointerup touchend", function () {
+            removeEvents()
+        })
+    
+        $("#pointerLayer").on("pointermove", function (e) {
+            pointerAction(e)
+        })
+        $("#pointerLayer").on("pointerdown", function () {
+            pointerLayer.style.pointerEvents = "none"
+            pointerLayer.style.touchAction = "none"
+        })
+    })
+})
 
 // Starts spawning the sprites in the sprite array, and Checks if wave is over, then it clears the sprites array.
 // This function is passed information about the next wave and initiates the next wave once the current wave is over.
@@ -1067,6 +1171,3 @@ function startWave (nextWave, rawWaveInfo, timeTillNext) {
         }
     }, 1000)
 }
-
-
-
