@@ -266,7 +266,7 @@ function loading () {
             clearInterval(checkLoading)
             loadingScreen.style.display = "none"
             loadStatData()
-            test() // temporary
+            //test() // temporary
         }
     }, 1000)
 }
