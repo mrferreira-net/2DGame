@@ -391,13 +391,14 @@ function loadPaths (data) {
 }
 
 // Is triggered when all image data is loaded to define sprite and tower stats
+// Used to easily change the different sprite speeds, damage, etc.
 let spriteStats, towerStats
 function loadStatData () {
     spriteStats = {
         "drone": {
             speed: 0.6,
             hp: 100,
-            sizeMod: 1.2,
+            sizeMod: 1.1,
             image: images.drone
         },
         "menace": {
@@ -417,7 +418,8 @@ function loadStatData () {
             projectileId: "missile",
             projectileSpeed: 1.5,
             projectileSizeMod: 1,
-            projectileDmg: 33.4
+            projectileDmg: 33.4,
+            price: 100
         }
     }
 }
@@ -500,6 +502,7 @@ function runAsteroid() {
 // player option to retry or return to menu.
 function playerDead () {
     paused = true
+    stopRender = true
     $("#gameOverScreen")[0].style.display = "block"
 }
 
@@ -508,10 +511,10 @@ $(document).ready(function () {
     $("#missileCannon").on("click", function (e) {
         appendTower(images.mcannon, towerStats["mcannon"].sizeMod, 
             towerStats["mcannon"].range, towerStats["mcannon"].firingSpeed,
-            "mcannon", towerStats["mcannon"].turnSpeed, e)
+            "mcannon", towerStats["mcannon"].turnSpeed, towerStats["mcannon"].price, e)
     })
 })
-function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, e) {
+function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, price, e) {
     pointerId = id
     let posX, posY
     pointerLayer.style.pointerEvents = "auto"
@@ -554,10 +557,11 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, e) {
                 gTurn: false,
                 direction: 0,
                 sRadian: 0,
-                sIndex: -1,
+                spriteId: -1,
                 firingSpeed: firingSpeed,
                 firing: false,
-                firingInterval: null
+                firingInterval: null,
+                price: price
             })
         }
         else {
@@ -662,7 +666,7 @@ function appendProjectile (towerIndex) {
         dmg = towerStats[towerType].projectileDmg
 
     projectiles.push({
-        sIndex: towers[towerIndex].sIndex,
+        spriteId: towers[towerIndex].spriteId,
         tIndex: towerIndex,
         x: towers[towerIndex].x + (towers[towerIndex].width / 2),
         y: towers[towerIndex].y + (towers[towerIndex].height / 2),
@@ -678,10 +682,10 @@ function appendProjectile (towerIndex) {
 
 // function that appends sprites object to sprites array
 function appendSprite (spriteQuantity, spriteType) {
+    let spriteId = 0
     for (let i = 0; i < spriteQuantity; i++) {
         let sizeMod = spriteStats[spriteType].sizeMod,
             image = spriteStats[spriteType].image
-            
         sprites.push({
             hp: spriteStats[spriteType].hp, 
             x: 0,
@@ -692,10 +696,22 @@ function appendSprite (spriteQuantity, spriteType) {
             height: image.height * sizeMod,
             path: getRandomInt(paths.length),
             index: 0,
-            despawned: false,
-            name: spriteType
+            name: spriteType,
+            spriteId: spriteId
         })
+        spriteId++
     }
+}
+
+// This function takes the unique id property of a sprite object and
+// finds the object in the array of sprites that has that unique id.
+function spriteIdtoIndex(id) {
+    let spritesLen = sprites.length
+    for (let i = 0; i < spritesLen; i++) {
+        if (sprites[i].spriteId == id) 
+            return i
+    }
+    return null
 }
 
 // function that spawns sprites in sprite array.
@@ -703,48 +719,51 @@ function renderSprites() {
     spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
     for (let i = 0; i < spawned; i++) {
         let roundedIndex = Math.round(sprites[i].index)
-        if ((roundedIndex > paths[sprites[i].path].length - 1) && sprites[i].despawned == false) {
+        if (roundedIndex > paths[sprites[i].path].length - 1) {
             // Do damage to player
             if (playerHP > 0) {
                 $('#' + playerHP + 'hp')[0].style.display = "none"
                 playerHP--
             }
-            if (playerHP == 0){
+            if (playerHP == 0)
                 playerDead()
-                return
-            }
         }
-        if ((roundedIndex > paths[sprites[i].path].length - 1) || (sprites[i].hp <= 0) || sprites[i].despawned) {
-            if (sprites[i].hp <= 0 && sprites[i].despawned == false) {
+        if (roundedIndex > paths[sprites[i].path].length - 1 || sprites[i].hp <= 0) {
+            if (sprites[i].hp <= 0) {
                 if (sprites[i].name == "drone")
                     playerCredits = playerCredits + 25
                 else if (sprites[i].name == "menace")
                     playerCredits = playerCredits + 50
-
                 $("#playerCredits").html(playerCredits)
             }
-            sprites[i].despawned = true
+            sprites.splice(i, 1)
+            spawned--
+            numOfSprites--
             continue
         }
             
         spriteContext.save()
         spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
         spriteContext.rotate(paths[sprites[i].path][roundedIndex].r)
-        spriteContext.drawImage(sprites[i].image, (-sprites[i].width / 2), (-sprites[i].height / 2), sprites[i].width, sprites[i].height)
+        spriteContext.drawImage(sprites[i].image, (-sprites[i].width / 2), (-sprites[i].height / 2), 
+            sprites[i].width, sprites[i].height)
         spriteContext.restore()
 
         spriteContext.save()
         spriteContext.translate(paths[sprites[i].path][roundedIndex].x, paths[sprites[i].path][roundedIndex].y)
         let fullHP = spriteStats[sprites[i].name].hp
         if (sprites[i].hp < fullHP) {
-            spriteContext.drawImage(images.hpBarRed, 0, 0, images.hpBarRed.width, images.hpBarRed.height, 
-                (-sprites[i].width / 2), ((-sprites[i].height / 2) + 20), (images.hpBarRed.width / 5) , (images.hpBarRed.height / 5))
+            spriteContext.drawImage(images.hpBarRed, 0, 0,
+                images.hpBarRed.width, images.hpBarRed.height, 
+                (-images.hpBarRed.width *  1/10), (sprites[i].height * 3/5), 
+                (images.hpBarRed.width / 5) , (images.hpBarRed.height / 5))
 
             let croppedHPBarDimensions = images.hpBarGreen.width * (sprites[i].hp / fullHP)
 
-            spriteContext.drawImage(images.hpBarGreen, 0, 0, croppedHPBarDimensions, images.hpBarGreen.height, 
-                                    (-sprites[i].width / 2), ((-sprites[i].height / 2) + 20), (croppedHPBarDimensions / 5), 
-                                    (images.hpBarGreen.height / 5))
+            spriteContext.drawImage(images.hpBarGreen, 0, 0, 
+                croppedHPBarDimensions, images.hpBarGreen.height, 
+                (-images.hpBarGreen.width * 1/10), (sprites[i].height * 3/5),
+                (croppedHPBarDimensions / 5), (images.hpBarGreen.height / 5))
         }
         spriteContext.restore()
 
@@ -763,7 +782,8 @@ function renderPointers() {
         if (pointerId == "coin") {
             pointerContext.save()
             pointerContext.translate(position.x, position.y)
-            pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
+            pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2),
+                imageSrc.width, imageSrc.height)
             pointerContext.restore()
         }
         else {
@@ -774,7 +794,8 @@ function renderPointers() {
             pointerContext.save()
             pointerContext.translate(position.x, position.y)
             pointerContext.rotate(3 * pi / 2)
-            pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2), imageSrc.width, imageSrc.height)
+            pointerContext.drawImage(imageSrc, (-imageSrc.width / 2), (-imageSrc.height / 2),
+                imageSrc.width, imageSrc.height)
             pointerContext.restore()
         }
     }
@@ -801,8 +822,10 @@ function renderTowers() {
         // designates specific turning instructions for when a towers angle is significantly 
         // different than the angle of a sprite within the tower's range.
         function gentleTurn () {
-            let dx = sprites[towers[i].sIndex].x - (towers[i].x + (towers[i].width / 2)),
-                dy = sprites[towers[i].sIndex].y - (towers[i].y + (towers[i].height / 2))
+            if (spriteIdtoIndex(towers[i].spriteId) == null)
+                return
+            let dx = sprites[spriteIdtoIndex(towers[i].spriteId)].x - (towers[i].x + (towers[i].width / 2)),
+                dy = sprites[spriteIdtoIndex(towers[i].spriteId)].y - (towers[i].y + (towers[i].height / 2))
             towers[i].sRadian = getRadian(dx, dy)
 
             let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
@@ -820,15 +843,13 @@ function renderTowers() {
         if (towers[i].gTurn == true) 
             gentleTurn()
         else {
-            spritesLen = sprites.length
+            let spritesLen = sprites.length
             for (let j = 0; j < spritesLen; j++) {
-                if (sprites[j].despawned)
-                    continue
                 let dx = sprites[j].x - (towers[i].x + (towers[i].width / 2)),
                     dy = sprites[j].y - (towers[i].y + (towers[i].height / 2)),
                     hypotenuse = Math.sqrt((dx ** 2) + (dy ** 2))
-                towers[i].sIndex = j
                 if (hypotenuse <= towers[i].range) {
+                    towers[i].spriteId = sprites[j].spriteId
                     towers[i].sRadian = getRadian(dx, dy)
                     let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
                     if (dTheta > tenDeg) {
@@ -862,7 +883,8 @@ function renderTowers() {
         towerContext.save()
         towerContext.translate(towers[i].x + (towers[i].width / 2), towers[i].y + (towers[i].height / 2))
         towerContext.rotate(towers[i].radian)
-        towerContext.drawImage(towers[i].image, (-towers[i].width / 2), (-towers[i].height / 2), towers[i].width, towers[i].height)
+        towerContext.drawImage(towers[i].image, (-towers[i].width / 2), (-towers[i].height / 2),
+            towers[i].width, towers[i].height)
         towerContext.restore()
     }
 }
@@ -879,8 +901,8 @@ function renderProjectiles() {
             projectileContext.save()
             projectileContext.translate(px, py)
             projectileContext.rotate(projectiles[i].radian)
-            projectileContext.drawImage(projectiles[i].image, (-projectiles[i].width / 2), (-projectiles[i].height / 2), 
-                                        projectiles[i].width, projectiles[i].height)
+            projectileContext.drawImage(projectiles[i].image, (-projectiles[i].width / 2), (-projectiles[i].height / 2),
+                projectiles[i].width, projectiles[i].height)
             projectileContext.restore()
 
             let xTheta = Math.cos(projectiles[i].radian) * projectiles[i].speed * timeMultiplier,
@@ -891,7 +913,9 @@ function renderProjectiles() {
             continue
         }
         
-        let spriteIndex = projectiles[i].sIndex,
+        if (spriteIdtoIndex(projectiles[i].spriteId) == null)
+            break
+        let spriteIndex = spriteIdtoIndex(projectiles[i].spriteId),
             sx = sprites[spriteIndex].x,
             sy = sprites[spriteIndex].y,
             dx = sx - px,
@@ -901,8 +925,8 @@ function renderProjectiles() {
         projectileContext.save()
         projectileContext.translate(px, py)
         projectileContext.rotate(radian)
-        projectileContext.drawImage(projectiles[i].image, (-projectiles[i].width / 2), (-projectiles[i].height / 2), 
-                                    projectiles[i].width, projectiles[i].height)
+        projectileContext.drawImage(projectiles[i].image, (-projectiles[i].width / 2), (-projectiles[i].height / 2),
+            projectiles[i].width, projectiles[i].height)
         projectileContext.restore()
 
         let xTheta = Math.cos(radian) * projectiles[i].speed * timeMultiplier,
@@ -922,12 +946,12 @@ function renderProjectiles() {
                 i--
             if (sprites[spriteIndex].hp <= 0) {
                 for (let j = 0; j < projectilesLen; j++) {
-                    if (projectiles[j].sIndex == spriteIndex) 
+                    if (spriteIdtoIndex(projectiles[j].spriteId) == spriteIndex) 
                         projectiles[j].target = false
                 }
                 let towersLen = towers.length
                 for (let j = 0; j < towersLen; j++) {
-                    if (towers[j].sIndex == spriteIndex) {
+                    if (spriteIdtoIndex(towers[j].spriteId) == spriteIndex) {
                         towers[j].firing = false
                         clearInterval(towers[j].firingInterval)
                         towers[j].firingInterval = null
@@ -962,16 +986,13 @@ function render() {
     }
 }
 
-// Allows player to start next wave once all the sprites of the current wave have been killed/despawned.
+// Allows player to start next wave once all the sprites of the current wave have been killed.
 let startNextWave = false
 function startNextWaveButton () {
-    let spritesLen = sprites.length
-    for (let i = 0; i < spritesLen; i++) {
-        if (sprites[i].despawned == false) {
-            alert("Cannot start next wave until there are no enemy units in the current wave.")
-            time = new Date().getTime()
-            return
-        }
+    if (sprites.length != 0) {
+        alert("Cannot start next wave until there are no enemy units in the current wave.")
+        time = new Date().getTime()
+        return
     }
     startNextWave = true
 }
@@ -998,6 +1019,10 @@ $(document).ready(function () {
                 && (towers[i].y - (towers[i].height / 2)) <= (posY + (images["coin"].height / 2))) {
                     //sell tower
                     towerSold = true
+                    playerCredits = playerCredits + (towers[i].price * 3/4)
+                    $("#playerCredits").html(playerCredits)
+                    towers.splice(i, 1)
+                    break
                 }
             }
 
