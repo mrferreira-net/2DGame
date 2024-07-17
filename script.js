@@ -1089,7 +1089,7 @@ $(document).ready(function () {
             sell()
         })
         $(".gameButton").on("pointerup touchend", function () {
-            sell()
+            removeEvents()
         })
     
         $("#pointerLayer").on("pointermove", function (e) {
