@@ -1,0 +1,12 @@
+Notes:
+- Remember to use pause on each setInterval
+
+To do:
+- make wave sprite info nicer (more detail)
+- create missile strike animation?
+- create exhaust animations
+- create more towers
+- create more sprites
+- vertical attack ("aerial sprites")
+- pause, settings buttons
+- Bug test like a mad man

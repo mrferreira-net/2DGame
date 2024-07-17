@@ -3,6 +3,7 @@ const tenDeg = oneDeg * 10
 const twoDeg = oneDeg * 2
 const pi = Math.PI
 const twoPi = Math.PI * 2
+let spawnRate
 
 // developement tool for creating sprite path data.
 let createdPath = []
@@ -266,7 +267,7 @@ function loading () {
             clearInterval(checkLoading)
             loadingScreen.style.display = "none"
             loadStatData()
-            //test() // temporary
+            test() // temporary
         }
     }, 1000)
 }
@@ -399,13 +400,15 @@ function loadStatData () {
             speed: 0.6,
             hp: 100,
             sizeMod: 1.1,
-            image: images.drone
+            image: images.drone,
+            spriteValue: 25
         },
         "menace": {
             speed: 0.5,
             hp: 200,
             sizeMod: 1,
-            image: images.menace
+            image: images.menace,
+            spriteValue: 50
         }
     }
 
@@ -446,8 +449,30 @@ function loadAsteroid () {
     }, "text")
 }
 
+// Function used to fire projectiles, this is used in specified map functions.
+let checkFiring
+function fireProjectiles () {
+    checkFiring = setInterval (function () {
+        if (!paused) {
+            let towersLen = towers.length
+            for (let i = 0; i < towersLen; i++) {
+                if (towers[i].firing == true && towers[i].firingInterval == null) {
+                    towers[i].firingInterval = setInterval(function () {
+                        if (!paused) 
+                            appendProjectile(i)
+                    }, towers[i].firingSpeed)
+                }
+                else if (towers[i].firing == false && towers[i].firingInterval != null) {
+                    clearInterval(towers[i].firingInterval)
+                    towers[i].firingInterval = null
+                }
+            }
+        }
+    }, 50)
+}
+
 // Begins Asteroid defense sprite spawning.
-let checkFiring, spawnRate = 1500
+spawnRate = 1500
 function runAsteroid() {
     edgeLayer.style.display = "block"
     edgeLayer.style.backgroundImage = "url('Assets/Backgrounds/AsteroidLayer.png')"
@@ -457,6 +482,7 @@ function runAsteroid() {
     // Wave info is formatted as the integer number of sprites, a space, 
     // then the sprite type followed by a comma to seperate sprites.
     startWave(wave1, "10 drone", 30)
+    fireProjectiles()
 
     function wave1(waveInfo) {
         for (let i in waveInfo)
@@ -478,24 +504,6 @@ function runAsteroid() {
             appendSprite(waveInfo[i], i)
         startWave("", "", "")
     }
-
-    checkFiring = setInterval (function () {
-        if (!paused) {
-            let towersLen = towers.length
-            for (let i = 0; i < towersLen; i++) {
-                if (towers[i].firing == true && towers[i].firingInterval == null) {
-                    towers[i].firingInterval = setInterval(function () {
-                        if (!paused) 
-                            appendProjectile(i)
-                    }, towers[i].firingSpeed)
-                }
-                else if (towers[i].firing == false && towers[i].firingInterval != null) {
-                    clearInterval(towers[i].firingInterval)
-                    towers[i].firingInterval = null
-                }
-            }
-        }
-    }, 1000)
 }
 
 // Functions triggers when playerHP reaches 0, informs player of losing and deals with variables and gives,
@@ -532,6 +540,8 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, pric
         let towersLen = towers.length
         // Doesn't allow for towers to be placed over one another
         for (let i = 0; i < towersLen; i++) {
+            if (towers[i].despawn == true)
+                continue
             if ((towers[i].x + (towers[i].width / 2)) >= (posX - (imageSrc.width * sizeMod / 2)) 
             && (towers[i].x - (towers[i].width / 2)) <= (posX + (imageSrc.width * sizeMod / 2)) 
             && (towers[i].y + (towers[i].height / 2)) >= (posY - (imageSrc.height * sizeMod / 2)) 
@@ -557,11 +567,12 @@ function appendTower (imageSrc, sizeMod, range, firingSpeed, id, turnSpeed, pric
                 gTurn: false,
                 direction: 0,
                 sRadian: 0,
-                spriteId: -1,
+                sIndex: -1,
                 firingSpeed: firingSpeed,
                 firing: false,
                 firingInterval: null,
-                price: price
+                price: price,
+                despawn: false
             })
         }
         else {
@@ -666,7 +677,7 @@ function appendProjectile (towerIndex) {
         dmg = towerStats[towerType].projectileDmg
 
     projectiles.push({
-        spriteId: towers[towerIndex].spriteId,
+        sIndex: towers[towerIndex].sIndex,
         tIndex: towerIndex,
         x: towers[towerIndex].x + (towers[towerIndex].width / 2),
         y: towers[towerIndex].y + (towers[towerIndex].height / 2),
@@ -676,13 +687,13 @@ function appendProjectile (towerIndex) {
         speed: speed,
         radian: towers[towerIndex].radian,
         dmg: dmg,
-        target: true
+        target: true,
+        despawn: false
     })
 }
 
 // function that appends sprites object to sprites array
 function appendSprite (spriteQuantity, spriteType) {
-    let spriteId = 0
     for (let i = 0; i < spriteQuantity; i++) {
         let sizeMod = spriteStats[spriteType].sizeMod,
             image = spriteStats[spriteType].image
@@ -691,34 +702,26 @@ function appendSprite (spriteQuantity, spriteType) {
             x: 0,
             y: 0,
             speed: spriteStats[spriteType].speed,
+            spriteValue: spriteStats[spriteType].spriteValue,
             image: image,
             width: image.width * sizeMod,
             height: image.height * sizeMod,
             path: getRandomInt(paths.length),
-            index: 0,
+            pathIndex: 0,
             name: spriteType,
-            spriteId: spriteId
+            despawn: false
         })
-        spriteId++
     }
-}
-
-// This function takes the unique id property of a sprite object and
-// finds the object in the array of sprites that has that unique id.
-function spriteIdtoIndex(id) {
-    let spritesLen = sprites.length
-    for (let i = 0; i < spritesLen; i++) {
-        if (sprites[i].spriteId == id) 
-            return i
-    }
-    return null
 }
 
 // function that spawns sprites in sprite array.
 function renderSprites() {
     spriteContext.clearRect(0, 0, spriteLayer.width, spriteLayer.height)
     for (let i = 0; i < spawned; i++) {
-        let roundedIndex = Math.round(sprites[i].index)
+        if (sprites[i].despawn == true)
+            continue
+
+        let roundedIndex = Math.round(sprites[i].pathIndex)
         if (roundedIndex > paths[sprites[i].path].length - 1) {
             // Do damage to player
             if (playerHP > 0) {
@@ -727,18 +730,7 @@ function renderSprites() {
             }
             if (playerHP == 0)
                 playerDead()
-        }
-        if (roundedIndex > paths[sprites[i].path].length - 1 || sprites[i].hp <= 0) {
-            if (sprites[i].hp <= 0) {
-                if (sprites[i].name == "drone")
-                    playerCredits = playerCredits + 25
-                else if (sprites[i].name == "menace")
-                    playerCredits = playerCredits + 50
-                $("#playerCredits").html(playerCredits)
-            }
-            sprites.splice(i, 1)
-            spawned--
-            numOfSprites--
+            sprites[i].despawn = true
             continue
         }
             
@@ -769,7 +761,7 @@ function renderSprites() {
 
         sprites[i].x = paths[sprites[i].path][roundedIndex].x
         sprites[i].y = paths[sprites[i].path][roundedIndex].y
-        sprites[i].index = sprites[i].index + (sprites[i].speed * timeMultiplier)
+        sprites[i].pathIndex = sprites[i].pathIndex + (sprites[i].speed * timeMultiplier)
     }
 }
 
@@ -819,13 +811,14 @@ function renderTowers() {
     //}
 
     for (let i = 0; i < towersLen; i++) {
+        if (towers[i].despawn == true)
+            continue
+
         // designates specific turning instructions for when a towers angle is significantly 
         // different than the angle of a sprite within the tower's range.
         function gentleTurn () {
-            if (spriteIdtoIndex(towers[i].spriteId) == null)
-                return
-            let dx = sprites[spriteIdtoIndex(towers[i].spriteId)].x - (towers[i].x + (towers[i].width / 2)),
-                dy = sprites[spriteIdtoIndex(towers[i].spriteId)].y - (towers[i].y + (towers[i].height / 2))
+            let dx = sprites[towers[i].sIndex].x - (towers[i].x + (towers[i].width / 2)),
+                dy = sprites[towers[i].sIndex].y - (towers[i].y + (towers[i].height / 2))
             towers[i].sRadian = getRadian(dx, dy)
 
             let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
@@ -845,11 +838,14 @@ function renderTowers() {
         else {
             let spritesLen = sprites.length
             for (let j = 0; j < spritesLen; j++) {
+                if (sprites[j].despawn == true)
+                    continue
+
                 let dx = sprites[j].x - (towers[i].x + (towers[i].width / 2)),
                     dy = sprites[j].y - (towers[i].y + (towers[i].height / 2)),
                     hypotenuse = Math.sqrt((dx ** 2) + (dy ** 2))
                 if (hypotenuse <= towers[i].range) {
-                    towers[i].spriteId = sprites[j].spriteId
+                    towers[i].sIndex = j
                     towers[i].sRadian = getRadian(dx, dy)
                     let dTheta = Math.abs(towers[i].sRadian - towers[i].radian)
                     if (dTheta > tenDeg) {
@@ -894,6 +890,9 @@ function renderProjectiles() {
     let projectilesLen = projectiles.length
     projectileContext.clearRect(0, 0, projectileLayer.width, projectileLayer.height)
     for (let i = 0; i < projectilesLen; i++) {
+        if (projectiles[i].despawn == true)
+            continue
+
         let px = projectiles[i].x,
             py = projectiles[i].y
         
@@ -913,9 +912,7 @@ function renderProjectiles() {
             continue
         }
         
-        if (spriteIdtoIndex(projectiles[i].spriteId) == null)
-            break
-        let spriteIndex = spriteIdtoIndex(projectiles[i].spriteId),
+        let spriteIndex = projectiles[i].sIndex
             sx = sprites[spriteIndex].x,
             sy = sprites[spriteIndex].y,
             dx = sx - px,
@@ -938,20 +935,23 @@ function renderProjectiles() {
 
         dx = Math.abs(dx)
         dy = Math.abs(dy)
-        if ((dx < projectiles[i].width && dy < projectiles[i].height)) {
+        if (dx < projectiles[i].width && dy < projectiles[i].height && sprites[spriteIndex].despawn == false) {
             sprites[spriteIndex].hp = sprites[spriteIndex].hp - projectiles[i].dmg
-            projectiles.splice(i, 1)
-            projectilesLen--
-            if (i > 0)
-                i--
+            projectiles[i].despawn = true
+
             if (sprites[spriteIndex].hp <= 0) {
+                sprites[spriteIndex].despawn = true
+                playerCredits = playerCredits + sprites[spriteIndex].spriteValue
+                $("#playerCredits").html(playerCredits)
+
                 for (let j = 0; j < projectilesLen; j++) {
-                    if (spriteIdtoIndex(projectiles[j].spriteId) == spriteIndex) 
+                    if (projectiles[j].sIndex == spriteIndex) 
                         projectiles[j].target = false
                 }
+
                 let towersLen = towers.length
                 for (let j = 0; j < towersLen; j++) {
-                    if (spriteIdtoIndex(towers[j].spriteId) == spriteIndex) {
+                    if (towers[j].sIndex == spriteIndex) {
                         towers[j].firing = false
                         clearInterval(towers[j].firingInterval)
                         towers[j].firingInterval = null
@@ -959,22 +959,20 @@ function renderProjectiles() {
                 }
             }
         }
-        else if (projectiles[i].x > 960 || projectiles[i].y > 540) {
-            projectiles.splice(i, 1)
-            projectilesLen--
-            i--
-        }
+        else if (projectiles[i].x > 960 || projectiles[i].x < 0 || projectiles[i].y > 540 || projectiles[i].y < 0) 
+            projectiles[i].despawn = true
     }
 }
 
 // The actual animation frame function for rendering all sprites, towers, and projectiles.
 let deltaTime = 0,
     time = new Date().getTime(),
-    timeMultiplier = 1
+    timeMultiplier = 1,
+    timePerFrame = (1000 / 60)
 function render() {
     let now = new Date().getTime()
     deltaTime = now - time
-    timeMultiplier = deltaTime / 16.667
+    timeMultiplier = deltaTime / timePerFrame
     time = now
     renderSprites()
     renderPointers()
@@ -989,10 +987,13 @@ function render() {
 // Allows player to start next wave once all the sprites of the current wave have been killed.
 let startNextWave = false
 function startNextWaveButton () {
-    if (sprites.length != 0) {
-        alert("Cannot start next wave until there are no enemy units in the current wave.")
-        time = new Date().getTime()
-        return
+    let spritesLen = sprites.length
+    for (let i = 0; i < spritesLen; i++) {
+        if (sprites[i].despawn == false) {
+            alert("Cannot start next wave until there are no enemy units in the current wave.")
+            time = new Date().getTime()
+            return
+        }
     }
     startNextWave = true
 }
@@ -1013,6 +1014,8 @@ $(document).ready(function () {
                 towerSold = false
             // Checks if clicking on tower
             for (let i = 0; i < towersLen; i++) {
+                if (towers[i].despawn == true)
+                    continue
                 if ((towers[i].x + (towers[i].width / 2)) >= (posX - (images["coin"].width / 2)) 
                 && (towers[i].x - (towers[i].width / 2)) <= (posX + (images["coin"].width / 2)) 
                 && (towers[i].y + (towers[i].height / 2)) >= (posY - (images["coin"].height / 2)) 
@@ -1021,7 +1024,7 @@ $(document).ready(function () {
                     towerSold = true
                     playerCredits = playerCredits + (towers[i].price * 3/4)
                     $("#playerCredits").html(playerCredits)
-                    towers.splice(i, 1)
+                    towers[i].despawn = true
                     break
                 }
             }
@@ -1086,7 +1089,7 @@ $(document).ready(function () {
             sell()
         })
         $(".gameButton").on("pointerup touchend", function () {
-            removeEvents()
+            sell()
         })
     
         $("#pointerLayer").on("pointermove", function (e) {
