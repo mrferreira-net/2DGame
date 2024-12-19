@@ -2,6 +2,10 @@ Notes:
 - Remember to use pause on each setInterval
 
 To do:
+- Can probably just get rid of settings
+button.
+- Regulate firing speed, especially
+when transitioning between targets.
 - make wave sprite info nicer (more detail)
 - create missile strike animation?
 - create exhaust animations
